@@ -5,8 +5,10 @@ in vec2 passTextureCoord;
 
 out vec4 outColor;
 
+uniform vec3 colour;
+uniform int useColour;
 uniform sampler2D tex;
 
 void main() {
-	outColor = texture(tex, passTextureCoord);
+	        outColor = texture(tex, passTextureCoord);
 }
