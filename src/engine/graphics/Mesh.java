@@ -1,6 +1,5 @@
 package engine.graphics;
 
-import maths.Vector3f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
@@ -14,22 +13,13 @@ public class Mesh {
     private Vertex[] vertices;
     private int[] indices;
     private Material material;
-    private int vao, pbo, ibo, cbo, tbo, nbo;
-    private Vector3f color;
-    private float[] textCoords, normals;
+    private int vao, pbo, ibo, cbo, tbo;
 
     public Mesh(Vertex[] vertices, int[] indices, Material material) {
         this.vertices = vertices;
         this.indices = indices;
         this.material = material;
     }
-
-//    public Mesh(Vertex[] vertices, float[] textCoords, float[] normals, int[] indices) {
-//        this.vertices = vertices;
-//        this.textCoords = textCoords;
-//        this.normals = normals;
-//        this.indices = indices;
-//    }
 
     public void create() {
         material.create();
@@ -48,6 +38,16 @@ public class Mesh {
 
         pbo = storeData(positionBuffer, 0, 3);
 
+        FloatBuffer colorBuffer = MemoryUtil.memAllocFloat(vertices.length * 3);
+        float[] colorData = new float[vertices.length * 3];
+        for (int i = 0; i < vertices.length; i++) {
+            colorData[i * 3] = vertices[i].getColor().getX();
+            colorData[i * 3 + 1] = vertices[i].getColor().getY();
+            colorData[i * 3 + 2] = vertices[i].getColor().getZ();
+        }
+        colorBuffer.put(colorData).flip();
+
+        cbo = storeData(colorBuffer, 1, 3);
 
         FloatBuffer textureBuffer = MemoryUtil.memAllocFloat(vertices.length * 2);
         float[] textureData = new float[vertices.length * 2];
@@ -58,7 +58,6 @@ public class Mesh {
         textureBuffer.put(textureData).flip();
 
         tbo = storeData(textureBuffer, 2, 2);
-
 
         IntBuffer indicesBuffer = MemoryUtil.memAllocInt(indices.length);
         indicesBuffer.put(indices).flip();
@@ -83,7 +82,6 @@ public class Mesh {
         GL15.glDeleteBuffers(cbo);
         GL15.glDeleteBuffers(ibo);
         GL15.glDeleteBuffers(tbo);
-        GL15.glDeleteBuffers(nbo);
 
         GL30.glDeleteVertexArrays(vao);
 
@@ -120,29 +118,5 @@ public class Mesh {
 
     public Material getMaterial() {
         return material;
-    }
-
-    public Vector3f getColor() {
-        return color;
-    }
-
-    public void setColor(Vector3f color) {
-        this.color = color;
-    }
-
-    public float[] getTextCoords() {
-        return textCoords;
-    }
-
-    public void setTextCoords(float[] textCoords) {
-        this.textCoords = textCoords;
-    }
-
-    public float[] getNormals() {
-        return normals;
-    }
-
-    public void setNormals(float[] normals) {
-        this.normals = normals;
     }
 }
