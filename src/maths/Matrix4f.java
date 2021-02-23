@@ -33,6 +33,16 @@ public class Matrix4f {
         return result;
     }
 
+    public static Matrix4f translate(float x, float y, float z) {
+        Matrix4f result = Matrix4f.identity();
+
+        result.set(3, 0, x);
+        result.set(3, 1, y);
+        result.set(3, 2, z);
+
+        return result;
+    }
+
     public static Matrix4f rotate(float angle, Vector3f axis) {
         Matrix4f result = Matrix4f.identity();
 
@@ -49,6 +59,26 @@ public class Matrix4f {
         result.set(2, 0, axis.getZ() * axis.getX() * C - axis.getY() * sin);
         result.set(2, 1, axis.getZ() * axis.getY() * C + axis.getX() * sin);
         result.set(2, 2, cos + axis.getZ() * axis.getZ() * C);
+
+        return result;
+    }
+
+    public static Matrix4f rotate(float angle, float x, float y, float z) {
+        Matrix4f result = Matrix4f.identity();
+
+        float cos = (float) Math.cos(Math.toRadians(angle));
+        float sin = (float) Math.sin(Math.toRadians(angle));
+        float C = 1 - cos;
+
+        result.set(0, 0, cos + x * x * C);
+        result.set(0, 1, x * y * C - z * sin);
+        result.set(0, 2, x * z * C + y * sin);
+        result.set(1, 0, y * x * C + z * sin);
+        result.set(1, 1, cos + y * y * C);
+        result.set(1, 2, y * z * C - x * sin);
+        result.set(2, 0, z * x * C - y * sin);
+        result.set(2, 1, z * y * C + x * sin);
+        result.set(2, 2, cos + z * z * C);
 
         return result;
     }
@@ -159,4 +189,8 @@ public class Matrix4f {
     public float[] getAll() {
         return elements;
     }
+
+
+
+
 }

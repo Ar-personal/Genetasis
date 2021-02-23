@@ -1,5 +1,6 @@
 package engine.graphics;
 
+import engine.objects.PointLight;
 import engine.utils.FileUtils;
 import maths.Matrix4f;
 import maths.Vector2f;
@@ -7,16 +8,24 @@ import maths.Vector3f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjglx.util.vector.Vector4f;
 
 import java.nio.FloatBuffer;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.lwjgl.opengl.GL20.glUniform4f;
+import static org.lwjgl.opengl.GL20C.glGetUniformLocation;
 
 public class Shader {
     private String vertexFile, fragmentFile;
     private int vertexID, fragmentID, programID;
+    private final Map<String, Integer> uniforms;
 
     public Shader(String vertexPath, String fragmentPath) {
         vertexFile = FileUtils.loadAsString(vertexPath);
         fragmentFile = FileUtils.loadAsString(fragmentPath);
+        uniforms = new HashMap<>();
     }
 
     public void create() {
@@ -57,8 +66,51 @@ public class Shader {
         }
     }
 
+    public void createUniform(String uniformName) throws Exception {
+        int uniformLocation = glGetUniformLocation(programID, uniformName);
+        if (uniformLocation < 0) {
+            throw new Exception("Could not find uniform:" + uniformName);
+        }
+        setUniform(uniformName, uniformLocation);
+    }
+
+    public void createPointLightUniform(String uniformName) throws Exception {
+        createUniform(uniformName + ".colour");
+        createUniform(uniformName + ".position");
+        createUniform(uniformName + ".intensity");
+        createUniform(uniformName + ".att.constant");
+        createUniform(uniformName + ".att.linear");
+        createUniform(uniformName + ".att.exponent");
+    }
+
+    public void createMaterialUniform(String uniformName) throws Exception {
+        createUniform(uniformName + ".ambient");
+        createUniform(uniformName + ".diffuse");
+        createUniform(uniformName + ".specular");
+        createUniform(uniformName + ".hasTexture");
+        createUniform(uniformName + ".reflectance");
+    }
+
     public int getUniformLocation(String name) {
         return GL20.glGetUniformLocation(programID, name);
+    }
+
+    public void setUniform(String uniformName, PointLight pointLight) {
+        setUniform(uniformName + ".colour", pointLight.getColor() );
+        setUniform(uniformName + ".position", pointLight.getPosition());
+        setUniform(uniformName + ".intensity", pointLight.getIntensity());
+        PointLight.Attenuation att = pointLight.getAttenuation();
+        setUniform(uniformName + ".att.constant", att.getConstant());
+        setUniform(uniformName + ".att.linear", att.getLinear());
+        setUniform(uniformName + ".att.exponent", att.getExponent());
+    }
+
+    public void setUniform(String uniformName, Material material) {
+        setUniform(uniformName + ".ambient", material.getAmbientColour());
+        setUniform(uniformName + ".diffuse", material.getDiffuseColour());
+        setUniform(uniformName + ".specular", material.getSpecularColour());
+        setUniform(uniformName + ".hasTexture", material.isTextured() ? 1 : 0);
+        setUniform(uniformName + ".reflectance", material.getReflectance());
     }
 
     public void setUniform(String name, float value) {
@@ -75,6 +127,10 @@ public class Shader {
 
     public void setUniform(String name, Vector2f value) {
         GL20.glUniform2f(getUniformLocation(name), value.getX(), value.getY());
+    }
+
+    public void setUniform(String uniformName, Vector4f value) {
+        glUniform4f(getUniformLocation(uniformName), value.x, value.y, value.z, value.w);
     }
 
     public void setUniform(String name, Vector3f value) {
