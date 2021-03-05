@@ -1,41 +1,92 @@
 package engine.graphics;
 
-import engine.Window;
-import engine.objects.Camera;
-import engine.objects.GameObject;
-import maths.Matrix4f;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL30;
+
+import engine.utils.Utils;
+import main.GameItem;
+import main.Transformation;
+import org.joml.Matrix4f;
+import org.lwjgl.system.MemoryUtil;
+
+import java.nio.FloatBuffer;
+
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL30.*;
 
 public class Renderer {
-    private Shader shader;
-    private Window window;
+    private static final float FOV = (float) Math.toRadians(60.0f);
 
-    public Renderer(Window window, Shader shader) {
-        this.shader = shader;
-        this.window = window;
+    private static final float Z_NEAR = 0.01f;
+
+    private static final float Z_FAR = 1000.f;
+
+    private org.joml.Matrix4f projectionMatrix;
+
+    private Shader shader;
+    private Transformation transformation;
+    private int vboId;
+
+    private int vaoId;
+
+    public Renderer() {
+        transformation = new Transformation();
     }
 
-    public void renderMesh(GameObject object, Camera camera) {
-        GL30.glBindVertexArray(object.getMesh().getVAO());
-        GL30.glEnableVertexAttribArray(0);
-        GL30.glEnableVertexAttribArray(1);
-        GL30.glEnableVertexAttribArray(2);
-        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, object.getMesh().getIBO());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL13.glBindTexture(GL11.GL_TEXTURE_2D, object.getMesh().getMaterial().getTextureID());
+    public void init(Window window) throws Exception {
+        shader = new Shader();
+
+        shader.createVertexShader(Utils.loadResource("/shaders/mainVertex.glsl"));
+        shader.createFragmentShader(Utils.loadResource("/shaders/mainFragment.glsl"));
+        shader.link();
+
+        float aspectRatio = (float) window.getWidth() / window.getHeight();
+        projectionMatrix = new Matrix4f().perspective(Renderer.FOV, aspectRatio, Renderer.Z_NEAR, Renderer.Z_FAR);
+        shader.createUniform("projectionMatrix");
+
+        shader.createUniform("projectionMatrix");
+        shader.createUniform("worldMatrix");
+
+        window.setClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    }
+
+    public void clear() {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
+
+    public void render(Window window, GameItem[] gameItems) {
+        clear();
+
+        if ( window.isResized() ) {
+            glViewport(0, 0, window.getWidth(), window.getHeight());
+            window.setResized(false);
+        }
+
         shader.bind();
-        shader.setUniform("model", Matrix4f.transform(object.getPosition(), object.getRotation(), object.getScale()));
-        shader.setUniform("view", Matrix4f.view(camera.getPosition(), camera.getRotation()));
-        shader.setUniform("projection", window.getProjectionMatrix());
-        GL11.glDrawElements(GL11.GL_TRIANGLES, object.getMesh().getIndices().length, GL11.GL_UNSIGNED_INT, 0);
+
+        // Update projection Matrix
+        Matrix4f projectionMatrix = transformation.getProjectionMatrix(FOV, window.getWidth(), window.getHeight(), Z_NEAR, Z_FAR);
+        shader.setUniform("projectionMatrix", projectionMatrix);
+
+        // Render each gameItem
+        for(GameItem gameItem : gameItems) {
+            // Set world matrix for this item
+            Matrix4f worldMatrix =
+                    transformation.getWorldMatrix(
+                            gameItem.getPosition(),
+                            gameItem.getRotation(),
+                            gameItem.getScale());
+            shader.setUniform("worldMatrix", worldMatrix);
+            // Render the mes for this game item
+            gameItem.getMesh().render();
+        }
+
         shader.unbind();
-        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-        GL30.glDisableVertexAttribArray(0);
-        GL30.glDisableVertexAttribArray(1);
-        GL30.glDisableVertexAttribArray(2);
-        GL30.glBindVertexArray(0);
+    }
+
+    public void cleanup() {
+        if (shader != null) {
+            shader.cleanup();
+        }
     }
 }
