@@ -28,5 +28,6 @@
     </orderEntry>
     <orderEntry type="library" exported="" name="libs" level="project" />
     <orderEntry type="library" exported="" name="joml-1.10.0" level="project" />
+    <orderEntry type="library" exported="" name="pngdecoder-1.0" level="project" />
   </component>
 </module>
