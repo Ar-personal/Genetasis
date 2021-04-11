@@ -1,12 +1,6 @@
 package main;
 
-import de.matthiasmann.twl.utils.PNGDecoder;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.system.MemoryStack;
-import org.newdawn.slick.opengl.TextureLoader;
-import org.w3c.dom.Text;
-
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
@@ -16,23 +10,13 @@ import static org.lwjgl.stb.STBImage.*;
 
 public class Texture {
 
-    private int id;
-    private String path;
-    private float width, height;
+    private final int id;
 
-    private org.newdawn.slick.opengl.Texture texture;
-
-    public Texture(String path, int id) {
-        this.path = path;
-        this.id = id;
+    public Texture(String fileName) throws Exception {
+        this(loadTexture(fileName));
     }
 
     public Texture(int id) {
-        this.id = id;
-    }
-
-    public Texture(org.newdawn.slick.opengl.Texture texture, int id){
-        this.texture = texture;
         this.id = id;
     }
 
@@ -56,10 +40,9 @@ public class Texture {
 
             buf = stbi_load(fileName, w, h, channels, 4);
             if (buf == null) {
-                throw new Exception("Image file [" + fileName  + "] not loaded: " + stbi_failure_reason());
+                throw new Exception("Image file [" + fileName + "] not loaded: " + stbi_failure_reason());
             }
 
-            /* Get width and height of image */
             width = w.get();
             height = h.get();
         }
@@ -84,17 +67,6 @@ public class Texture {
         stbi_image_free(buf);
 
         return textureId;
-    }
-
-    public void create() {
-        try {
-            texture = TextureLoader.getTexture(path.split("[.]")[1], Texture.class.getResourceAsStream(path), GL11.GL_NEAREST);
-            width = texture.getWidth();
-            height = texture.getHeight();
-            id = texture.getTextureID();
-        } catch (IOException e) {
-            System.err.println("Can't find texture at " + path);
-        }
     }
 
     public void cleanup() {

@@ -1,9 +1,8 @@
 package main;
 
-import engine.graphics.Mesh;
-import engine.graphics.Renderer;
-import engine.graphics.Window;
+import engine.graphics.*;
 import engine.objects.Camera;
+import engine.utils.OBJLoader;
 import main.IGameLogic;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -27,131 +26,73 @@ public class Game implements IGameLogic {
     private GameItem[] gameItems;
     private final Camera camera;
 
+
+    private Vector3f ambientLight;
+
+    private PointLight[] pointLightList;
+
+    private SpotLight[] spotLightList;
+
+    private DirectionalLight directionalLight;
+
+    private float lightAngle;
+
+    private float spotAngle = 0;
+
+    private float spotInc = 1;
+
+
     public Game() {
         renderer = new Renderer();
         camera = new Camera();
-        cameraInc = new Vector3f();
+        cameraInc = new Vector3f(0.0f, 0.0f, 0.0f);
+        lightAngle = -90;
     }
 
     @Override
     public void init(Window window) throws Exception {
         renderer.init(window);
-        float[] positions = new float[] {
-                // V0
-                -0.5f, 0.5f, 0.5f,
-                // V1
-                -0.5f, -0.5f, 0.5f,
-                // V2
-                0.5f, -0.5f, 0.5f,
-                // V3
-                0.5f, 0.5f, 0.5f,
-                // V4
-                -0.5f, 0.5f, -0.5f,
-                // V5
-                0.5f, 0.5f, -0.5f,
-                // V6
-                -0.5f, -0.5f, -0.5f,
-                // V7
-                0.5f, -0.5f, -0.5f,
 
-                // For text coords in top face
-                // V8: V4 repeated
-                -0.5f, 0.5f, -0.5f,
-                // V9: V5 repeated
-                0.5f, 0.5f, -0.5f,
-                // V10: V0 repeated
-                -0.5f, 0.5f, 0.5f,
-                // V11: V3 repeated
-                0.5f, 0.5f, 0.5f,
+        float reflectance = 1f;
+        //Mesh mesh = OBJLoader.loadMesh("/models/bunny.obj");
+        //Material material = new Material(new Vector3f(0.2f, 0.5f, 0.5f), reflectance);
 
-                // For text coords in right face
-                // V12: V3 repeated
-                0.5f, 0.5f, 0.5f,
-                // V13: V2 repeated
-                0.5f, -0.5f, 0.5f,
+        Mesh mesh = OBJLoader.loadMesh("/models/cube.obj");
+        Texture texture = new Texture("C:\\Users\\Alex\\Dropbox\\Game Design\\Genetasis\\resources\\textures\\grassblock.png");
+        Material material = new Material(texture, reflectance);
 
-                // For text coords in left face
-                // V14: V0 repeated
-                -0.5f, 0.5f, 0.5f,
-                // V15: V1 repeated
-                -0.5f, -0.5f, 0.5f,
+        mesh.setMaterial(material);
+        GameItem gameItem = new GameItem(mesh);
+        gameItem.setScale(0.5f);
+        gameItem.setPosition(0, 0, -2);
+        //gameItem.setPosition(0, 0, -2);
+        //gameItem.setScale(0.1f);
+        //gameItem.setPosition(0, 0, -2);
+        //gameItem.setPosition(0, 0, -0.2f);
+        gameItems = new GameItem[]{gameItem};
 
-                // For text coords in bottom face
-                // V16: V6 repeated
-                -0.5f, -0.5f, -0.5f,
-                // V17: V7 repeated
-                0.5f, -0.5f, -0.5f,
-                // V18: V1 repeated
-                -0.5f, -0.5f, 0.5f,
-                // V19: V2 repeated
-                0.5f, -0.5f, 0.5f,
-        };
-        float[] textCoords = new float[]{
-                0.0f, 0.0f,
-                0.0f, 0.5f,
-                0.5f, 0.5f,
-                0.5f, 0.0f,
+        ambientLight = new Vector3f(0.3f, 0.3f, 0.3f);
 
-                0.0f, 0.0f,
-                0.5f, 0.0f,
-                0.0f, 0.5f,
-                0.5f, 0.5f,
+        // Point Light
+        Vector3f lightPosition = new Vector3f(0, 0, 1);
+        float lightIntensity = 1.0f;
+        PointLight pointLight = new PointLight(new Vector3f(1, 1, 1), lightPosition, lightIntensity);
+        PointLight.Attenuation att = new PointLight.Attenuation(0.0f, 0.0f, 1.0f);
+        pointLight.setAttenuation(att);
+        pointLightList = new PointLight[]{pointLight};
 
-                // For text coords in top face
-                0.0f, 0.5f,
-                0.5f, 0.5f,
-                0.0f, 1.0f,
-                0.5f, 1.0f,
+        // Spot Light
+        lightPosition = new Vector3f(0, 0.0f, 10f);
+        pointLight = new PointLight(new Vector3f(1, 1, 1), lightPosition, lightIntensity);
+        att = new PointLight.Attenuation(0.0f, 0.0f, 0.02f);
+        pointLight.setAttenuation(att);
+        Vector3f coneDir = new Vector3f(0, 0, -1);
+        float cutoff = (float) Math.cos(Math.toRadians(140));
+        SpotLight spotLight = new SpotLight(pointLight, coneDir, cutoff);
+        spotLightList = new SpotLight[]{spotLight, new SpotLight(spotLight)};
 
-                // For text coords in right face
-                0.0f, 0.0f,
-                0.0f, 0.5f,
-
-                // For text coords in left face
-                0.5f, 0.0f,
-                0.5f, 0.5f,
-
-                // For text coords in bottom face
-                0.5f, 0.0f,
-                1.0f, 0.0f,
-                0.5f, 0.5f,
-                1.0f, 0.5f,
-        };
-        int[] indices = new int[]{
-                // Front face
-                0, 1, 3, 3, 1, 2,
-                // Top Face
-                8, 10, 11, 9, 8, 11,
-                // Right face
-                12, 13, 7, 5, 12, 7,
-                // Left face
-                14, 15, 6, 4, 14, 6,
-                // Bottom face
-                16, 18, 19, 17, 16, 19,
-                // Back face
-                4, 6, 7, 5, 4, 7,};
-        Texture texture = new Texture("/textures/grassblock.png", 0);
-        texture.create();
-        Mesh mesh = new Mesh(positions, textCoords, indices, texture);
-
-
-        GameItem gameItem1 = new GameItem(mesh);
-        gameItem1.setScale(0.5f);
-        gameItem1.setPosition(0, 0, -2);
-
-        GameItem gameItem2 = new GameItem(mesh);
-        gameItem2.setScale(0.5f);
-        gameItem2.setPosition(0.5f, 0.5f, -2);
-
-        GameItem gameItem3 = new GameItem(mesh);
-        gameItem3.setScale(0.5f);
-        gameItem3.setPosition(0, 0, -2.5f);
-
-        GameItem gameItem4 = new GameItem(mesh);
-        gameItem4.setScale(0.5f);
-        gameItem4.setPosition(0.5f, 0, -2.5f);
-
-        gameItems = new GameItem[]{gameItem1, gameItem2, gameItem3, gameItem4};
+        lightPosition = new Vector3f(-1, 0, 0);
+        directionalLight = new DirectionalLight(new Vector3f(1, 1, 1), lightPosition, lightIntensity);
 
     }
 
@@ -174,6 +115,12 @@ public class Game implements IGameLogic {
         } else if (window.isKeyPressed(GLFW_KEY_X)) {
             cameraInc.y = 1;
         }
+        float lightPos = spotLightList[0].getPointLight().getPosition().z;
+        if (window.isKeyPressed(GLFW_KEY_N)) {
+            this.spotLightList[0].getPointLight().getPosition().z = lightPos + 0.1f;
+        } else if (window.isKeyPressed(GLFW_KEY_M)) {
+            this.spotLightList[0].getPointLight().getPosition().z = lightPos - 0.1f;
+        }
     }
 
     @Override
@@ -186,19 +133,53 @@ public class Game implements IGameLogic {
             Vector2f rotVec = mouseInput.getDisplVec();
             camera.moveRotation(rotVec.x * MOUSE_SENSITIVITY, rotVec.y * MOUSE_SENSITIVITY, 0);
         }
-    }
 
-        public void render(Window window){
-            renderer.render(window, gameItems, camera);
+        // Update spot light direction
+        spotAngle += spotInc * 0.05f;
+        if (spotAngle > 2) {
+            spotInc = -1;
+        } else if (spotAngle < -2) {
+            spotInc = 1;
         }
+        double spotAngleRad = Math.toRadians(spotAngle);
+        Vector3f coneDir = spotLightList[0].getConeDirection();
+        coneDir.y = (float) Math.sin(spotAngleRad);
 
-        @Override
-        public void cleanup () {
-            renderer.cleanup();
-            for (GameItem gameItem : gameItems) {
-                gameItem.getMesh().cleanUp();
+        // Update directional light direction, intensity and colour
+        lightAngle += 1.1f;
+        if (lightAngle > 90) {
+            directionalLight.setIntensity(0);
+            if (lightAngle >= 360) {
+                lightAngle = -90;
             }
+        } else if (lightAngle <= -80 || lightAngle >= 80) {
+            float factor = 1 - (float) (Math.abs(lightAngle) - 80) / 10.0f;
+            directionalLight.setIntensity(factor);
+            directionalLight.getColor().y = Math.max(factor, 0.9f);
+            directionalLight.getColor().z = Math.max(factor, 0.5f);
+        } else {
+            directionalLight.setIntensity(1);
+            directionalLight.getColor().x = 1;
+            directionalLight.getColor().y = 1;
+            directionalLight.getColor().z = 1;
+        }
+        double angRad = Math.toRadians(lightAngle);
+        directionalLight.getDirection().x = (float) Math.sin(angRad);
+        directionalLight.getDirection().y = (float) Math.cos(angRad);
+    }
+
+    public void render(Window window){
+        renderer.render(window, camera, gameItems, ambientLight,
+                pointLightList, spotLightList, directionalLight);
+    }
+
+    @Override
+    public void cleanup () {
+        renderer.cleanup();
+        for (GameItem gameItem : gameItems) {
+            gameItem.getMesh().cleanUp();
         }
     }
+}
 
 
