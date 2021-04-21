@@ -3,6 +3,7 @@ package engine.graphics;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11;
 
 import static java.sql.Types.NULL;
 import static org.lwjgl.glfw.GLFW.*;
@@ -93,6 +94,16 @@ public class Window {
         // Set the clear color
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glEnable(GL_DEPTH_TEST);
+
+        //transparencies
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
     }
 
     public void setClearColor(float r, float g, float b, float alpha) {

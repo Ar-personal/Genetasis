@@ -85,6 +85,18 @@ public class Shader{
         }
     }
 
+    public void createFogUniform(String uniformName) throws Exception {
+        createUniform(uniformName + ".activeFog");
+        createUniform(uniformName + ".colour");
+        createUniform(uniformName + ".density");
+    }
+
+    public void setUniform(String uniformName, Fog fog) {
+        setUniform(uniformName + ".activeFog", fog.isActive() ? 1 : 0);
+        setUniform(uniformName + ".colour", fog.getColour() );
+        setUniform(uniformName + ".density", fog.getDensity());
+    }
+
     public void setUniform(String uniformName, int value) {
         glUniform1i(uniforms.get(uniformName), value);
     }
