@@ -27,17 +27,19 @@ public class HeightMapMesh {
 
     private final float maxY;
 
-    private final Mesh mesh;
+    private Mesh mesh;
 
     private final float[][] heightArray;
+    private float[] heightList;
 
-    private float[] colours;
+    private Vector3f[] colours;
 
     public HeightMapMesh(float minY, float maxY, ByteBuffer heightMapImage, int width, int height, String textureFile, int textInc) throws Exception {
         this.minY = minY;
         this.maxY = maxY;
 
         heightArray = new float[height][width];
+        heightList = new float[height * width];
 
         Texture texture = new Texture(textureFile);
 
@@ -88,10 +90,10 @@ public class HeightMapMesh {
     }
 
     //textureless terrain
-    public HeightMapMesh(float minY, float maxY, ByteBuffer heightMapImage, int width, int height, float[] colours, int textInc) throws Exception {
+    public HeightMapMesh(float minY, float maxY, ByteBuffer heightMapImage, int width, int height, int textInc) throws Exception {
         this.minY = minY;
         this.maxY = maxY;
-        this.colours = colours;
+
 
         heightArray = new float[height][width];
 
@@ -110,6 +112,7 @@ public class HeightMapMesh {
                 heightArray[row][col] = currentHeight;
                 positions.add(currentHeight); //y
                 positions.add(STARTZ + row * incz); //z
+
 
                 // Set texture coordinates
                 textCoords.add((float) textInc * (float) col / (float) width);
@@ -132,13 +135,35 @@ public class HeightMapMesh {
                 }
             }
         }
+
+
         float[] posArr = Utils.listToArray(positions);
         int[] indicesArr = indices.stream().mapToInt(i -> i).toArray();
         float[] textCoordsArr = Utils.listToArray(textCoords);
         float[] normalsArr = calcNormals(posArr, width, height);
-        this.mesh = new Mesh(posArr, textCoordsArr, colours, normalsArr, indicesArr, true);
-        Material material = new Material(colour, 0.0f);
-        mesh.setMaterial(material);
+
+
+        colours = new Vector3f[]{(new Vector3f(0.1f, 0.0f, 0.0f)), new Vector3f(0.0f, 0.5f, 0.0f), new Vector3f(0.0f, 0.0f, 0.5f), new Vector3f(0.0f, 0.5f, 0.5f), new Vector3f(0.1f, 0.5f, 0.0f)};
+        float floatColours[] = new float[indices.size()];
+        //add array of floats to mesh class by converting an array of vec3
+        int floatIndex = 0;
+        int i = 0;
+        for(int o = 0; o < floatColours.length; o += 3) {
+
+                floatColours[o] = colours[i].x;
+                floatColours[o + 1] = colours[i].y;
+                floatColours[o + 2] = colours[i].z;
+
+                if (i + 1 >= colours.length) {
+                    i = 0;
+                }
+                i++;
+            }
+
+        System.out.println(indicesArr.length + " " + floatColours.length);
+        this.mesh = new Mesh(posArr, textCoordsArr, floatColours, normalsArr, indicesArr, false);
+//        mesh.setMaterial(new Material(new Vector4f(0.1f, 0.0f, 0.0f, 1), 0.0f);
+
     }
 
     public Mesh getMesh() {

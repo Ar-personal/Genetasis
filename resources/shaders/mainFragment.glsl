@@ -6,6 +6,7 @@ const int MAX_SPOT_LIGHTS = 5;
 in vec2 outTexCoord;
 in vec3 mvVertexNormal;
 in vec3 mvVertexPos;
+in vec3 exColour;
 in vec4 mlightviewVertexPos;
 in mat4 outModelViewMatrix;
 
@@ -197,6 +198,7 @@ float calcShadow(vec4 position)
 void main()
 {
     setupColours(material, outTexCoord);
+    fragColor = vec4(exColour, 1.0);
 
     vec3 currNomal = calcNormal(material, mvVertexNormal, outTexCoord, outModelViewMatrix);
 

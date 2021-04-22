@@ -72,7 +72,7 @@ public class Game implements IGameLogic {
         // Setup  GameItems
         float reflectance = 1f;
         Mesh cubeMesh = OBJLoader.loadMesh("/models/cube.obj");
-        Material cubeMaterial = new Material(new Vector4f(0, 1, 0, 1), reflectance);
+        Material cubeMaterial = new Material(new Vector4f(0.5f, 0.5f, 1, 1), reflectance);
         cubeMesh.setMaterial(cubeMaterial);
         cubeGameItem = new GameItem(cubeMesh);
         cubeGameItem.setPosition(0, 0, 0);
@@ -87,8 +87,7 @@ public class Game implements IGameLogic {
         terrain = new Terrain(terrainSize, terrainScale, minY, maxY, "C:\\Users\\Alex\\Dropbox\\Game Design\\Genetasis\\resources\\textures\\heightmap.png", null, textInc);
 
 
-        scene.setGameItems(terrain.getGameItems());
-        scene.setGameItems(new GameItem[]{cubeGameItem});
+        scene.setGameItems((terr);
 
         // Setup Lights
         setupLights();

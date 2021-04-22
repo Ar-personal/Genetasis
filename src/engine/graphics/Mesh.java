@@ -5,6 +5,7 @@ import main.Texture;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryUtil;
+import org.w3c.dom.Text;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -28,6 +29,8 @@ public class Mesh {
     private final int vertexCount;
 
     private Material material;
+
+    private Texture texture;
 
     public Mesh(float[] positions, float[] textCoords, float[] colours, float[] normals, int[] indices, boolean textured) {
         FloatBuffer posBuffer = null;
@@ -64,6 +67,8 @@ public class Mesh {
                 glEnableVertexAttribArray(1);
                 glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
             }else{
+                vboId = glGenBuffers();
+                vboIdList.add(vboId);
                 colourBuffer = MemoryUtil.memAllocFloat(colours.length);
                 colourBuffer.put(colours).flip();
                 glBindBuffer(GL_ARRAY_BUFFER, colourVboId);
@@ -134,7 +139,9 @@ public class Mesh {
     }
 
     private void initRender() {
-        Texture texture = material.getTexture();
+        if(material != null) {
+            texture = material.getTexture();
+        }
         if (texture != null) {
             // Activate firs texture bank
             glActiveTexture(GL_TEXTURE0);

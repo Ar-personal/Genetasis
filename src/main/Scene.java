@@ -19,6 +19,8 @@ public class Scene {
 
     private Fog fog;
 
+    private int numGameItems;
+
     public Scene() {
         meshMap = new HashMap();
         fog = Fog.NOFOG;
@@ -29,7 +31,7 @@ public class Scene {
     }
 
     public void setGameItems(GameItem[] gameItems) {
-        int numGameItems = gameItems != null ? gameItems.length : 0;
+        numGameItems = gameItems != null ? gameItems.length : 0;
         for (int i=0; i<numGameItems; i++) {
             GameItem gameItem = gameItems[i];
             Mesh mesh = gameItem.getMesh();
@@ -40,6 +42,16 @@ public class Scene {
             }
             list.add(gameItem);
         }
+    }
+
+    public void addGameItem(GameItem gameItem) {
+        numGameItems++;
+            List<GameItem> list = meshMap.get(gameItem.getMesh());
+            if ( list == null ) {
+                list = new ArrayList<>();
+                meshMap.put(gameItem.getMesh(), list);
+            }
+            list.add(gameItem);
     }
 
     public void cleanup() {

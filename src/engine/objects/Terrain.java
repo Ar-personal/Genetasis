@@ -61,7 +61,7 @@ public class Terrain {
         if(textureFile != null) {
             heightMapMesh = new HeightMapMesh(minY, maxY, buf, width, height, textureFile, textInc);
         }else{
-            heightMapMesh = new HeightMapMesh(minY, maxY, buf, width, height, new Vector4f( 1, 0, 0, 1), textInc);
+            heightMapMesh = new HeightMapMesh(minY, maxY, buf, width, height, textInc);
         }
         boundingBoxes = new Box2D[terrainSize][terrainSize];
         for (int row = 0; row < terrainSize; row++) {

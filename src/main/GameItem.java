@@ -10,6 +10,7 @@ public class GameItem {
     private final Vector3f position;
 
     private float scale;
+    private Mesh[] meshes;
 
     private final Vector3f rotation;
 
@@ -22,6 +23,11 @@ public class GameItem {
     public GameItem(Mesh mesh) {
         this();
         this.mesh = mesh;
+    }
+
+    public GameItem(Mesh[] meshes) {
+        this();
+        this.meshes = meshes;
     }
 
     public Vector3f getPosition() {
@@ -53,10 +59,19 @@ public class GameItem {
     }
 
     public Mesh getMesh() {
-        return mesh;
+        return meshes[0];
+    }
+
+    public void setMeshes(Mesh[] meshes) {
+        this.meshes = meshes;
     }
 
     public void setMesh(Mesh mesh) {
-        this.mesh = mesh;
+        if (this.meshes != null) {
+            for (Mesh currMesh : meshes) {
+                currMesh.cleanUp();
+            }
+        }
+        this.meshes = new Mesh[]{mesh};
     }
 }
