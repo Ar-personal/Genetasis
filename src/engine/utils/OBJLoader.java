@@ -137,7 +137,7 @@ public class OBJLoader {
         }
         int[] indicesArr = new int[indices.size()];
         indicesArr = indices.stream().mapToInt((Integer v) -> v).toArray();
-        Mesh mesh = new Mesh(posArr, textCoordArr, null, normArr, indicesArr, true);
+        Mesh mesh = new Mesh(posArr, textCoordArr, null, normArr, indicesArr);
         return mesh;
     }
 

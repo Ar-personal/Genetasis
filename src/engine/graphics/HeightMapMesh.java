@@ -1,16 +1,19 @@
 package engine.graphics;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
+import engine.utils.Maths;
 import engine.utils.Utils;
 import main.Texture;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.lwjgl.system.CallbackI;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import static org.lwjgl.stb.STBImage.*;
 import static org.lwjglx.opengl.Display.getWidth;
@@ -27,67 +30,71 @@ public class HeightMapMesh {
 
     private final float maxY;
 
+//    private final float part;
+
     private Mesh mesh;
 
+    private Vector3f[] biomeColours;
+
     private final float[][] heightArray;
-    private float[] heightList;
+    private List heightList;
 
-    private Vector3f[] colours;
+    private List<Vector3f> colours;
 
-    public HeightMapMesh(float minY, float maxY, ByteBuffer heightMapImage, int width, int height, String textureFile, int textInc) throws Exception {
-        this.minY = minY;
-        this.maxY = maxY;
-
-        heightArray = new float[height][width];
-        heightList = new float[height * width];
-
-        Texture texture = new Texture(textureFile);
-
-        float incx = getXLength() / (width - 1);
-        float incz = getZLength() / (height - 1);
-
-        List<Float> positions = new ArrayList<>();
-        List<Float> textCoords = new ArrayList<>();
-        List<Integer> indices = new ArrayList<>();
-
-        for (int row = 0; row < height; row++) {
-            for (int col = 0; col < width; col++) {
-                // Create vertex for current position
-                positions.add(STARTX + col * incx); // x
-                float currentHeight = getHeight(col, row, width, heightMapImage);
-                heightArray[row][col] = currentHeight;
-                positions.add(currentHeight); //y
-                positions.add(STARTZ + row * incz); //z
-
-                // Set texture coordinates
-                textCoords.add((float) textInc * (float) col / (float) width);
-                textCoords.add((float) textInc * (float) row / (float) height);
-
-                // Create indices
-                if (col < width - 1 && row < height - 1) {
-                    int leftTop = row * width + col;
-                    int leftBottom = (row + 1) * width + col;
-                    int rightBottom = (row + 1) * width + col + 1;
-                    int rightTop = row * width + col + 1;
-
-                    indices.add(rightTop);
-                    indices.add(leftBottom);
-                    indices.add(rightBottom);
-
-                    indices.add(leftTop);
-                    indices.add(leftBottom);
-                    indices.add(rightTop);
-                }
-            }
-        }
-        float[] posArr = Utils.listToArray(positions);
-        int[] indicesArr = indices.stream().mapToInt(i -> i).toArray();
-        float[] textCoordsArr = Utils.listToArray(textCoords);
-        float[] normalsArr = calcNormals(posArr, width, height);
-        this.mesh = new Mesh(posArr, textCoordsArr, null, normalsArr, indicesArr, true);
-        Material material = new Material(texture, 0.0f);
-        mesh.setMaterial(material);
-    }
+//    public HeightMapMesh(float minY, float maxY, ByteBuffer heightMapImage, int width, int height, String textureFile, int textInc) throws Exception {
+//        this.minY = minY;
+//        this.maxY = maxY;
+//
+//        heightArray = new float[height][width];
+//        heightList = new float[height * width];
+//
+//        Texture texture = new Texture(textureFile);
+//
+//        float incx = getXLength() / (width - 1);
+//        float incz = getZLength() / (height - 1);
+//
+//        List<Float> positions = new ArrayList<>();
+//        List<Float> textCoords = new ArrayList<>();
+//        List<Integer> indices = new ArrayList<>();
+//
+//        for (int row = 0; row < height; row++) {
+//            for (int col = 0; col < width; col++) {
+//                // Create vertex for current position
+//                positions.add(STARTX + col * incx); // x
+//                float currentHeight = getHeight(col, row, width, heightMapImage);
+//                heightArray[row][col] = currentHeight;
+//                positions.add(currentHeight); //y
+//                positions.add(STARTZ + row * incz); //z
+//
+//                // Set texture coordinates
+//                textCoords.add((float) textInc * (float) col / (float) width);
+//                textCoords.add((float) textInc * (float) row / (float) height);
+//
+//                // Create indices
+//                if (col < width - 1 && row < height - 1) {
+//                    int leftTop = row * width + col;
+//                    int leftBottom = (row + 1) * width + col;
+//                    int rightBottom = (row + 1) * width + col + 1;
+//                    int rightTop = row * width + col + 1;
+//
+//                    indices.add(rightTop);
+//                    indices.add(leftBottom);
+//                    indices.add(rightBottom);
+//
+//                    indices.add(leftTop);
+//                    indices.add(leftBottom);
+//                    indices.add(rightTop);
+//                }
+//            }
+//        }
+//        float[] posArr = Utils.listToArray(positions);
+//        int[] indicesArr = indices.stream().mapToInt(i -> i).toArray();
+//        float[] textCoordsArr = Utils.listToArray(textCoords);
+//        float[] normalsArr = calcNormals(posArr, width, height);
+//        this.mesh = new Mesh(posArr, textCoordsArr, null, normalsArr, indicesArr, true);
+//        Material material = new Material(texture, 0.0f);
+//        mesh.setMaterial(material);
+//    }
 
     //textureless terrain
     public HeightMapMesh(float minY, float maxY, ByteBuffer heightMapImage, int width, int height, int textInc) throws Exception {
@@ -96,27 +103,35 @@ public class HeightMapMesh {
 
 
         heightArray = new float[height][width];
+        System.out.println("HeightMapMesh width: " + width + " heightMapMesh height: " + height);
+        System.out.println("Total Size: " + width * height);
 
         float incx = getXLength() / (width - 1);
         float incz = getZLength() / (height - 1);
 
-        List<Float> positions = new ArrayList<>();
-        List<Float> textCoords = new ArrayList<>();
+        List positions = new ArrayList();
+        Vector3f[][] positionsVec = new Vector3f[height][width];
+        List<Float> texCoords = new ArrayList<>();
         List<Integer> indices = new ArrayList<>();
+        heightList = new ArrayList();
 
+
+        int Idx = 0;
         for (int row = 0; row < height; row++) {
             for (int col = 0; col < width; col++) {
                 // Create vertex for current position
                 positions.add(STARTX + col * incx); // x
                 float currentHeight = getHeight(col, row, width, heightMapImage);
                 heightArray[row][col] = currentHeight;
+                heightList.add(currentHeight);
                 positions.add(currentHeight); //y
                 positions.add(STARTZ + row * incz); //z
+                positionsVec[row][col] = new Vector3f(STARTX + col * incx, currentHeight, STARTZ + row * incz);
 
-
+                Idx++;
                 // Set texture coordinates
-                textCoords.add((float) textInc * (float) col / (float) width);
-                textCoords.add((float) textInc * (float) row / (float) height);
+                texCoords.add((float) textInc * (float) col / (float) width);
+                texCoords.add((float) textInc * (float) row / (float) height);
 
                 // Create indices
                 if (col < width - 1 && row < height - 1) {
@@ -136,34 +151,100 @@ public class HeightMapMesh {
             }
         }
 
-
         float[] posArr = Utils.listToArray(positions);
         int[] indicesArr = indices.stream().mapToInt(i -> i).toArray();
-        float[] textCoordsArr = Utils.listToArray(textCoords);
+        float[] texCoordsArr = Utils.listToArray(texCoords);
         float[] normalsArr = calcNormals(posArr, width, height);
 
+        biomeColours = new Vector3f[]{new Vector3f((float) 201 / 255, (float) 178 / 255, (float) 99 / 255), new Vector3f((float) 135 /255, (float) 184 / 255, (float) 82 / 255), new Vector3f( (float) 80 / 255, (float) 171 /255, (float) 93 / 255),
+                new Vector3f((float) 120 / 255, (float) 120 / 255, (float) 120 / 255), new Vector3f((float) 200 / 256, (float) 200 / 255, (float)210 / 255), new Vector3f(0, 0, 0)};
 
-        colours = new Vector3f[]{(new Vector3f(0.1f, 0.0f, 0.0f)), new Vector3f(0.0f, 0.5f, 0.0f), new Vector3f(0.0f, 0.0f, 0.5f), new Vector3f(0.0f, 0.5f, 0.5f), new Vector3f(0.1f, 0.5f, 0.0f)};
-        float floatColours[] = new float[indices.size()];
-        //add array of floats to mesh class by converting an array of vec3
-        int floatIndex = 0;
-        int i = 0;
-        for(int o = 0; o < floatColours.length; o += 3) {
+//        float amplitude = 10f;
+//        float spread = 0.45f;
+//        float halfSpread = spread / 2;
+//        float value = (height + amplitude) / (amplitude * 2);
+//        value = Maths.clamp((value - halfSpread) * (1f / spread), 0f, 0.9999f);
+//        int firstBiome = (int) Math.floor(value / part);
+//        float blend = (value - (firstBiome * part)) / part;
+        colours = new ArrayList<>();
+        for(int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                //positions vec not bigger than 65536  but why does it need to be when positions is 3 times that with x y and z coords
+                //there should be as many colours as there are positions, positions length is 196608 and so is colours length, but that means for positions x, y, z there is and r g b,
+                //so do colours need to be one third of positions? but then items in float buffer are mismatched?? fully coloured map with texture errors when i changed positions to be arrays and to take
+                // the y value directly
+                float h = positionsVec[i][j].y;
+                float hscaled = (float) (h*2.0 - 1e-05); // hscaled should range in [0,2)
+                int hi = (int) hscaled;
+                float blend =  1 + h;
 
-                floatColours[o] = colours[i].x;
-                floatColours[o + 1] = colours[i].y;
-                floatColours[o + 2] = colours[i].z;
-
-                if (i + 1 >= colours.length) {
-                    i = 0;
+                if (positionsVec[i][j].y < -0.12f && positionsVec[i][j].y > -0.14f) {
+                    blend = positionsVec[i][j].y / -0.14f;
+                    colours.add(Colour.interpolateColours(biomeColours[4], biomeColours[3], blend, null));
                 }
-                i++;
+
+                if (positionsVec[i][j].y < -0.1f && positionsVec[i][j].y > -0.12f) {
+                    blend = positionsVec[i][j].y / -0.14f;
+
+
+                    colours.add(Colour.interpolateColours(biomeColours[5], biomeColours[4], blend, null));
+                }
+
+                if (positionsVec[i][j].y < -0.14f && positionsVec[i][j].y > -0.19f) {
+                    blend = positionsVec[i][j].y / -0.19f;
+                    colours.add(Colour.interpolateColours(biomeColours[3], biomeColours[2], blend, null));
+                }
+
+                if (positionsVec[i][j].y < -0.19f && positionsVec[i][j].y > -0.32f) {
+                    blend = positionsVec[i][j].y / -0.22f;
+                    colours.add(Colour.interpolateColours(biomeColours[2], biomeColours[1], blend, null));
+                }
+
+                if (positionsVec[i][j].y < -0.32f && positionsVec[i][j].y > -0.50f) {
+                    blend = positionsVec[i][j].y / -0.30f;
+                    colours.add(Colour.interpolateColours(biomeColours[1], biomeColours[0], blend, null));
+                }
+
+                if(positionsVec[i][j].y < -0.40f){
+                    colours.add(biomeColours[0]);
+                }
+
             }
+//            colours[i] = calculateColour((float) heightList.get(i), amplitude, spread);
 
-        System.out.println(indicesArr.length + " " + floatColours.length);
-        this.mesh = new Mesh(posArr, textCoordsArr, floatColours, normalsArr, indicesArr, false);
-//        mesh.setMaterial(new Material(new Vector4f(0.1f, 0.0f, 0.0f, 1), 0.0f);
+        }
 
+        float[] floatColour = new float[(width * height) * 3];
+        int index = 0;
+        for (int o = 0; o < colours.size(); o++){
+            floatColour[index] = colours.get(o).x;
+            floatColour[index + 1] = colours.get(o).y;
+            floatColour[index + 2] = colours.get(o).z;
+            if(index + 3 >= floatColour.length){
+                continue;
+            }else {
+                index += 3;
+            }
+        }
+
+        //add array of floats to mesh class by converting an array of vec3
+//        int i = 0;
+//        for(int o = 0; o < floatColours.length; o += 3) {
+//
+//                floatColours[o] = colours[i].x;
+//                floatColours[o + 1] = colours[i].y;
+//                floatColours[o + 2] = colours[i].z;
+//
+//                if (i + 1 >= colours.length) {
+//                    i = 0;
+//                }
+//                i++;
+//            }
+
+        System.out.println("indices length: " + indicesArr.length + " colors length: " + floatColour.length + " heightlist length: " + heightList.size() + " positions length: " + posArr.length + " height array length: ");
+        this.mesh = new Mesh(posArr, texCoordsArr, floatColour, normalsArr, indicesArr);
+//        mesh.setMaterial(new Material(new Vector4f(0, 1, 0.0f, 1), 0.0f));
+//        mesh.setMaterial(new Material());
     }
 
     public Mesh getMesh() {
@@ -269,5 +350,14 @@ public class HeightMapMesh {
                 | ((0xFF & g) << 8) | (0xFF & b);
         return this.minY + Math.abs(this.maxY - this.minY) * ((float) argb / (float) MAX_COLOUR);
     }
+
+//    private Vector3f calculateColour(float height, float amplitude, float spread) {
+//        float halfSpread = spread / 2;
+//        float value = (height + amplitude) / (amplitude * 2);
+//        value = Maths.clamp((value - halfSpread) * (1f / spread), -0.1f, 0.1f);
+//        int firstBiome = (int) Math.floor(value / part);
+//        float blend = (value - (firstBiome * part)) / part;
+//        return Colour.interpolateColours(biomeColours[firstBiome], biomeColours[firstBiome + 1], blend, null);
+//    }
 
 }

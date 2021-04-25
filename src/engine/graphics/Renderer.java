@@ -71,17 +71,17 @@ public class Renderer {
         // Create uniforms for modelView and projection matrices and texture
         sceneShaderProgram.createUniform("projectionMatrix");
         sceneShaderProgram.createUniform("modelViewMatrix");
-        sceneShaderProgram.createUniform("texture_sampler");
+//        sceneShaderProgram.createUniform("texture_sampler");
         sceneShaderProgram.createUniform("normalMap");
         // Create uniform for material
-        sceneShaderProgram.createMaterialUniform("material");
+//        sceneShaderProgram.createMaterialUniform("material");
         // Create lighting related uniforms
-        sceneShaderProgram.createUniform("specularPower");
-        sceneShaderProgram.createUniform("ambientLight");
-        sceneShaderProgram.createPointLightListUniform("pointLights", MAX_POINT_LIGHTS);
-        sceneShaderProgram.createSpotLightListUniform("spotLights", MAX_SPOT_LIGHTS);
-        sceneShaderProgram.createDirectionalLightUniform("directionalLight");
-        sceneShaderProgram.createFogUniform("fog");
+//        sceneShaderProgram.createUniform("specularPower");
+//        sceneShaderProgram.createUniform("ambientLight");
+//        sceneShaderProgram.createPointLightListUniform("pointLights", MAX_POINT_LIGHTS);
+//        sceneShaderProgram.createSpotLightListUniform("spotLights", MAX_SPOT_LIGHTS);
+//        sceneShaderProgram.createDirectionalLightUniform("directionalLight");
+//        sceneShaderProgram.createFogUniform("fog");
 
         sceneShaderProgram.createUniform("shadowMap");
         sceneShaderProgram.createUniform("orthoProjectionMatrix");
@@ -158,10 +158,10 @@ public class Renderer {
         Matrix4f viewMatrix = transformation.getViewMatrix();
 
         SceneLight sceneLight = scene.getSceneLight();
-        renderLights(viewMatrix, sceneLight);
+//        renderLights(viewMatrix, sceneLight);
 
-        sceneShaderProgram.setUniform("fog", scene.getFog());
-        sceneShaderProgram.setUniform("texture_sampler", 0);
+//        sceneShaderProgram.setUniform("fog", scene.getFog());
+//        sceneShaderProgram.setUniform("texture_sampler", 0);
         sceneShaderProgram.setUniform("normalMap", 1);
         sceneShaderProgram.setUniform("shadowMap", 2);
 

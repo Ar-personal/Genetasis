@@ -58,11 +58,11 @@ public class Terrain {
         // The number of vertices per column and row
         verticesPerCol = width - 1;
         verticesPerRow = height - 1;
-        if(textureFile != null) {
-            heightMapMesh = new HeightMapMesh(minY, maxY, buf, width, height, textureFile, textInc);
-        }else{
+//        if(textureFile != null) {
+//            heightMapMesh = new HeightMapMesh(minY, maxY, buf, width, height, textureFile, textInc);
+//        }else{
             heightMapMesh = new HeightMapMesh(minY, maxY, buf, width, height, textInc);
-        }
+//        }
         boundingBoxes = new Box2D[terrainSize][terrainSize];
         for (int row = 0; row < terrainSize; row++) {
             for (int col = 0; col < terrainSize; col++) {

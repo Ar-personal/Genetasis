@@ -165,13 +165,13 @@ public class Colour {
         }
     }
 
-    public static Colour interpolateColours(Colour colour1, Colour colour2, float blend, Colour dest) {
+    public static Vector3f interpolateColours(Vector3f colour1, Vector3f colour2, float blend, Vector3f dest) {
         float colour1Weight = 1 - blend;
-        float r = (colour1Weight * colour1.col.x) + (blend * colour2.col.x);
-        float g = (colour1Weight * colour1.col.y) + (blend * colour2.col.y);
-        float b = (colour1Weight * colour1.col.z) + (blend * colour2.col.z);
+        float r = (colour1Weight * colour1.x) + (blend * colour2.x);
+        float g = (colour1Weight * colour1.y) + (blend * colour2.y);
+        float b = (colour1Weight * colour1.z) + (blend * colour2.z);
         if (dest == null) {
-            return new Colour(r, g, b);
+            return new Vector3f(r, g, b);
         } else {
 //			dest.setColour(r, g, b);
             return dest;

@@ -49,27 +49,27 @@ public class ColourGenerator {
      *            {@code altitude} and minimum possible is {@code -altitude}.
      * @return The colours of all the vertices in the terrain, in a grid.
      */
-    public Colour[][] generateColours(float[][] heights, float amplitude) {
-        Colour[][] colours = new Colour[heights.length][heights.length];
-        for (int z = 0; z < heights.length; z++) {
-            for (int x = 0; x < heights[z].length; x++) {
-                colours[z][x] = calculateColour(heights[z][x], amplitude);
-            }
-        }
-        return colours;
-    }
+//    public Colour[][] generateColours(float[][] heights, float amplitude) {
+//        Colour[][] colours = new Colour[heights.length][heights.length];
+//        for (int z = 0; z < heights.length; z++) {
+//            for (int x = 0; x < heights[z].length; x++) {
+//                colours[z][x] = calculateColour(heights[z][x], amplitude);
+//            }
+//        }
+//        return colours;
+//    }
 
     /**Determines the colour of the vertex based on the provided height.
      * @param height - Height of the vertex.
      * @param amplitude - The maximum height that a vertex can be (
      * @return
      */
-    private Colour calculateColour(float height, float amplitude) {
-        float value = (height + amplitude) / (amplitude * 2);
-        value = Maths.clamp((value - halfSpread) * (1f / spread), 0f, 0.9999f);
-        int firstBiome = (int) Math.floor(value / part);
-        float blend = (value - (firstBiome * part)) / part;
-        return Colour.interpolateColours(biomeColours[firstBiome], biomeColours[firstBiome + 1], blend, null);
-    }
+//    private Colour calculateColour(float height, float amplitude) {
+//        float value = (height + amplitude) / (amplitude * 2);
+//        value = Maths.clamp((value - halfSpread) * (1f / spread), 0f, 0.9999f);
+//        int firstBiome = (int) Math.floor(value / part);
+//        float blend = (value - (firstBiome * part)) / part;
+//        return Colour.interpolateColours(biomeColours[firstBiome], biomeColours[firstBiome + 1], blend, null);
+//    }
 
 }

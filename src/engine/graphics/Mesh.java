@@ -24,7 +24,7 @@ public class Mesh {
 
     private final List<Integer> vboIdList;
 
-    private final int colourVboId;
+    private int colourVboId;
 
     private final int vertexCount;
 
@@ -32,7 +32,7 @@ public class Mesh {
 
     private Texture texture;
 
-    public Mesh(float[] positions, float[] textCoords, float[] colours, float[] normals, int[] indices, boolean textured) {
+    public Mesh(float[] positions, float[] textCoords, float[] colours, float[] normals, int[] indices) {
         FloatBuffer posBuffer = null;
         FloatBuffer textCoordsBuffer = null;
         FloatBuffer colourBuffer = null;
@@ -55,9 +55,9 @@ public class Mesh {
             glEnableVertexAttribArray(0);
             glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
 
-            colourVboId = glGenBuffers();
-            if(textured) {
+
                 // Texture coordinates VBO
+            if(textCoords != null) {
                 vboId = glGenBuffers();
                 vboIdList.add(vboId);
                 textCoordsBuffer = MemoryUtil.memAllocFloat(textCoords.length);
@@ -66,31 +66,38 @@ public class Mesh {
                 glBufferData(GL_ARRAY_BUFFER, textCoordsBuffer, GL_STATIC_DRAW);
                 glEnableVertexAttribArray(1);
                 glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
-            }else{
+            }
+
+
+            // Vertex normals VBO
+            if(normals != null) {
+                vboId = glGenBuffers();
+                vboIdList.add(vboId);
+                vecNormalsBuffer = MemoryUtil.memAllocFloat(normals.length);
+                if (vecNormalsBuffer.capacity() > 0) {
+                    vecNormalsBuffer.put(normals).flip();
+                } else {
+                    // Create empty structure
+                    vecNormalsBuffer = MemoryUtil.memAllocFloat(positions.length);
+                }
+                glBindBuffer(GL_ARRAY_BUFFER, vboId);
+                glBufferData(GL_ARRAY_BUFFER, vecNormalsBuffer, GL_STATIC_DRAW);
+                glEnableVertexAttribArray(2);
+                glVertexAttribPointer(2, 3, GL_FLOAT, false, 0, 0);
+            }
+
+            //colours
+            if(colours != null) {
+                colourVboId = glGenBuffers();
                 vboId = glGenBuffers();
                 vboIdList.add(vboId);
                 colourBuffer = MemoryUtil.memAllocFloat(colours.length);
                 colourBuffer.put(colours).flip();
                 glBindBuffer(GL_ARRAY_BUFFER, colourVboId);
                 glBufferData(GL_ARRAY_BUFFER, colourBuffer, GL_STATIC_DRAW);
-                glEnableVertexAttribArray(1);
-                glVertexAttribPointer(1, 3, GL_FLOAT, false, 0, 0);
+                glEnableVertexAttribArray(3);
+                glVertexAttribPointer(3, 3, GL_FLOAT, false, 0, 0);
             }
-
-            // Vertex normals VBO
-            vboId = glGenBuffers();
-            vboIdList.add(vboId);
-            vecNormalsBuffer = MemoryUtil.memAllocFloat(normals.length);
-            if (vecNormalsBuffer.capacity() > 0) {
-                vecNormalsBuffer.put(normals).flip();
-            } else {
-                // Create empty structure
-                vecNormalsBuffer = MemoryUtil.memAllocFloat(positions.length);
-            }
-            glBindBuffer(GL_ARRAY_BUFFER, vboId);
-            glBufferData(GL_ARRAY_BUFFER, vecNormalsBuffer, GL_STATIC_DRAW);
-            glEnableVertexAttribArray(2);
-            glVertexAttribPointer(2, 3, GL_FLOAT, false, 0, 0);
 
             // Index VBO
             vboId = glGenBuffers();

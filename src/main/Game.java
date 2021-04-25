@@ -80,14 +80,17 @@ public class Game implements IGameLogic {
 
 
         float terrainScale = 10;
-        int terrainSize = 3;
+        int terrainSize = 1;
         float minY = -0.1f;
         float maxY = 0.1f;
         int textInc = 40;
         terrain = new Terrain(terrainSize, terrainScale, minY, maxY, "C:\\Users\\Alex\\Dropbox\\Game Design\\Genetasis\\resources\\textures\\heightmap.png", null, textInc);
+        GameItem[] items = terrain.getGameItems();
+        for(int i = 0; i < items.length; i++) {
+            scene.addGameItem(items[i]);
+        }
 
-
-        scene.setGameItems((terr);
+//        scene.setGameItems(new GameItem[]{cubeGameItem});
 
         // Setup Lights
         setupLights();
