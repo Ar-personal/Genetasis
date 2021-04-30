@@ -1,11 +1,8 @@
 package engine.graphics;
 
-import main.GameItem;
+import engine.entities.GameItem;
 import main.Texture;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
 import org.lwjgl.system.MemoryUtil;
-import org.w3c.dom.Text;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -32,7 +29,9 @@ public class Mesh {
 
     private Texture texture;
 
-    public Mesh(float[] positions, float[] textCoords, float[] colours, float[] normals, int[] indices) {
+    private float width, height, length, minX, minY, minZ, maxX, maxY, maxZ;
+
+    public Mesh(float[] positions, float[] textCoords, float[] colours, float[] normals, int[] indices, boolean wireFrame) {
         FloatBuffer posBuffer = null;
         FloatBuffer textCoordsBuffer = null;
         FloatBuffer colourBuffer = null;
@@ -53,6 +52,13 @@ public class Mesh {
             glBindBuffer(GL_ARRAY_BUFFER, vboId);
             glBufferData(GL_ARRAY_BUFFER, posBuffer, GL_STATIC_DRAW);
             glEnableVertexAttribArray(0);
+//            if(wireFrame) {
+//                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//            }
+//
+//            if(!wireFrame){
+//                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//            }
             glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
 
 
@@ -126,8 +132,40 @@ public class Mesh {
                 MemoryUtil.memFree(indicesBuffer);
             }
         }
+
+        findDimensions(positions);
     }
 
+    public void findDimensions(float[] dimensions){
+        minX = dimensions[0]; minY = dimensions[1]; minZ = dimensions[2]; maxX = dimensions[0]; maxY = dimensions[1]; maxZ = dimensions[2];
+
+        for(int i = 0; i < dimensions.length - 3; i+=3){
+            if(dimensions[i] < minX){
+                minX = dimensions[i];
+            }
+            if(dimensions[i + 1] < minY){
+                minY = dimensions[i + 1];
+            }
+            if(dimensions[i + 2] < minZ){
+                minZ = dimensions[i + 2];
+            }
+            if(dimensions[i] > maxX){
+                maxX = dimensions[i];
+            }
+            if(dimensions[i + 1] > maxY){
+                maxY = dimensions[i + 1];
+            }
+            if(dimensions[i + 2] > maxZ){
+                maxZ = dimensions[i + 2];
+            }
+
+        }
+
+        width = maxX - minX;
+        height = maxY - minY;
+        length = maxZ - minZ;
+
+    }
 
     public Material getMaterial() {
         return material;
@@ -171,6 +209,7 @@ public class Mesh {
         initRender();
 
         glDrawElements(GL_TRIANGLES, getVertexCount(), GL_UNSIGNED_INT, 0);
+//        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
         endRender();
     }
@@ -178,9 +217,9 @@ public class Mesh {
     public void renderList(List<GameItem> gameItems, Consumer<GameItem> consumer) {
         initRender();
 
-        for (GameItem gameItem : gameItems) {
-            // Set up data required by GameItem
-            consumer.accept(gameItem);
+        for (GameItem staticGameItem : gameItems) {
+            // Set up data required by StaticGameItem
+            consumer.accept(staticGameItem);
             // Render this game item
             glDrawElements(GL_TRIANGLES, getVertexCount(), GL_UNSIGNED_INT, 0);
         }
@@ -220,6 +259,78 @@ public class Mesh {
         // Delete the VAO
         glBindVertexArray(0);
         glDeleteVertexArrays(vaoId);
+    }
+
+    public float getWidth() {
+        return width;
+    }
+
+    public void setWidth(float width) {
+        this.width = width;
+    }
+
+    public float getHeight() {
+        return height;
+    }
+
+    public void setHeight(float height) {
+        this.height = height;
+    }
+
+    public float getLength() {
+        return length;
+    }
+
+    public void setLength(float length) {
+        this.length = length;
+    }
+
+    public float getMinX() {
+        return minX;
+    }
+
+    public void setMinX(float minX) {
+        this.minX = minX;
+    }
+
+    public float getMinY() {
+        return minY;
+    }
+
+    public void setMinY(float minY) {
+        this.minY = minY;
+    }
+
+    public float getMinZ() {
+        return minZ;
+    }
+
+    public void setMinZ(float minZ) {
+        this.minZ = minZ;
+    }
+
+    public float getMaxX() {
+        return maxX;
+    }
+
+    public void setMaxX(float maxX) {
+        this.maxX = maxX;
+    }
+
+    public float getMaxY() {
+        return maxY;
+    }
+
+    public void setMaxY(float maxY) {
+        this.maxY = maxY;
+    }
+
+    public float getMaxZ() {
+        return maxZ;
+    }
+
+    public void setMaxZ(float maxZ) {
+        this.maxZ = maxZ;
     }
 }
 

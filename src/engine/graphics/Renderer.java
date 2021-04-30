@@ -1,25 +1,22 @@
 package engine.graphics;
 
 
+import engine.entities.GameItem;
+import engine.entities.StaticGameItem;
 import engine.objects.Camera;
+import engine.objects.SkyBox;
 import engine.utils.IHud;
 import engine.utils.Utils;
-import main.GameItem;
-import main.Scene;
-import main.SkyBox;
-import main.Transformation;
+import main.*;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.lwjgl.system.MemoryUtil;
 
-import java.nio.FloatBuffer;
 import java.util.List;
 import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.*;
 
 public class Renderer {
@@ -165,6 +162,7 @@ public class Renderer {
         sceneShaderProgram.setUniform("normalMap", 1);
         sceneShaderProgram.setUniform("shadowMap", 2);
 
+
         // Render each mesh with the associated game Items
         Map<Mesh, List<GameItem>> mapMeshes = scene.getGameMeshes();
         for (Mesh mesh : mapMeshes.keySet()) {
@@ -181,6 +179,25 @@ public class Renderer {
                     }
             );
         }
+
+
+
+//        Map<Mesh, List<GameItem>> boundMeshes = scene.getBoundingMap();
+//        for (Mesh mesh : boundMeshes.keySet()) {
+//            if(mesh.getMaterial() != null) {
+//                sceneShaderProgram.setUniform("material", mesh.getMaterial());
+//            }
+//            glActiveTexture(GL_TEXTURE2);
+//            glBindTexture(GL_TEXTURE_2D, shadowMap.getDepthMapTexture().getId());
+//            mesh.renderList(boundMeshes.get(mesh), (GameItem gameItem) -> {
+//                        Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(gameItem, viewMatrix);
+//                        sceneShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
+//                        Matrix4f modelLightViewMatrix = transformation.buildModelLightViewMatrix(gameItem, lightViewMatrix);
+//                        sceneShaderProgram.setUniform("modelLightViewMatrix", modelLightViewMatrix);
+//                    }
+//            );
+//        }
+
 
         sceneShaderProgram.unbind();
     }
@@ -237,13 +254,13 @@ public class Renderer {
         hudShaderProgram.bind();
 
         Matrix4f ortho = transformation.getOrtho2DProjectionMatrix(0, window.getWidth(), window.getHeight(), 0);
-        for (GameItem gameItem : hud.getGameItems()) {
-            Mesh mesh = gameItem.getMesh();
+        for (GameItem staticGameItem : hud.getGameItems()) {
+            Mesh mesh = staticGameItem.getMesh();
             // Set ortohtaphic and model matrix for this HUD item
-            Matrix4f projModelMatrix = transformation.buildOrthoProjModelMatrix(gameItem, ortho);
+            Matrix4f projModelMatrix = transformation.buildOrthoProjModelMatrix(staticGameItem, ortho);
             hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
-            hudShaderProgram.setUniform("colour", gameItem.getMesh().getMaterial().getAmbientColour());
-            hudShaderProgram.setUniform("hasTexture", gameItem.getMesh().getMaterial().isTextured() ? 1 : 0);
+            hudShaderProgram.setUniform("colour", staticGameItem.getMesh().getMaterial().getAmbientColour());
+            hudShaderProgram.setUniform("hasTexture", staticGameItem.getMesh().getMaterial().isTextured() ? 1 : 0);
 
             // Render the mesh for this HUD item
             mesh.render();

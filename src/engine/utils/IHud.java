@@ -1,6 +1,7 @@
 package engine.utils;
 
-import main.GameItem;
+import engine.entities.GameItem;
+import engine.entities.StaticGameItem;
 
 public interface IHud {
 

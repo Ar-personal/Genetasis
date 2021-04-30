@@ -1,5 +1,6 @@
 package main;
 
+import engine.entities.GameItem;
 import engine.objects.Camera;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;

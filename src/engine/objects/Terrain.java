@@ -1,25 +1,20 @@
 package engine.objects;
 
+import engine.entities.TerrainItem;
 import engine.graphics.HeightMapMesh;
-import engine.graphics.Material;
-import engine.graphics.Mesh;
-import engine.utils.Utils;
-import main.GameItem;
-import main.Texture;
+import engine.graphics.PerlinNoise;
+import engine.entities.StaticGameItem;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.lwjgl.stb.STBImage.*;
 
 public class Terrain {
 
-    private final GameItem[] gameItems;
+    private final TerrainItem[] terrainItems;
 
     private final int terrainSize;
 
@@ -29,14 +24,50 @@ public class Terrain {
 
     private final HeightMapMesh heightMapMesh;
 
+    private float minY;
+
+    private float maxY;
     /**
      * It will hold the bounding box for each terrain block
      */
     private final Box2D[][] boundingBoxes;
 
+    public Terrain(int terrainSize, float scale, float minY, float maxY, int textInc) throws Exception {
+        this.minY = minY;
+        this.maxY = maxY;
+        this.terrainSize = terrainSize;
+        terrainItems = new TerrainItem[terrainSize * terrainSize];
+
+        int width = 256;
+        int height = 256;
+
+        verticesPerCol = width - 1;
+        verticesPerRow = height - 1;
+        float amplitude = 0.3f;
+        float[][] heights = generateHeights(width, new PerlinNoise(6, 0.3f, 0.35f));
+        heightMapMesh = new HeightMapMesh(minY, maxY, heights, width, height, textInc, amplitude);
+
+
+        boundingBoxes = new Box2D[terrainSize][terrainSize];
+        for (int row = 0; row < terrainSize; row++) {
+            for (int col = 0; col < terrainSize; col++) {
+                float xDisplacement = (col - ((float) terrainSize - 1) / (float) 2) * scale * HeightMapMesh.getXLength();
+                float zDisplacement = (row - ((float) terrainSize - 1) / (float) 2) * scale * HeightMapMesh.getZLength();
+
+                TerrainItem terrainBlock = new TerrainItem(heightMapMesh.getMesh(), new Vector3f(xDisplacement, 0, zDisplacement));
+                terrainBlock.setScale(scale);
+                terrainItems[row * terrainSize + col] = terrainBlock;
+
+                boundingBoxes[row][col] = getBoundingBox(terrainBlock);
+            }
+        }
+
+
+    }
+
     public Terrain(int terrainSize, float scale, float minY, float maxY, String heightMapFile, String textureFile, int textInc) throws Exception {
         this.terrainSize = terrainSize;
-        gameItems = new GameItem[terrainSize * terrainSize];
+        terrainItems = new TerrainItem[terrainSize * terrainSize];
 
         ByteBuffer buf = null;
         int width;
@@ -58,21 +89,17 @@ public class Terrain {
         // The number of vertices per column and row
         verticesPerCol = width - 1;
         verticesPerRow = height - 1;
-//        if(textureFile != null) {
-//            heightMapMesh = new HeightMapMesh(minY, maxY, buf, width, height, textureFile, textInc);
-//        }else{
-            heightMapMesh = new HeightMapMesh(minY, maxY, buf, width, height, textInc);
-//        }
+        heightMapMesh = new HeightMapMesh(minY, maxY, buf, width, height, textInc);
+
         boundingBoxes = new Box2D[terrainSize][terrainSize];
         for (int row = 0; row < terrainSize; row++) {
             for (int col = 0; col < terrainSize; col++) {
                 float xDisplacement = (col - ((float) terrainSize - 1) / (float) 2) * scale * HeightMapMesh.getXLength();
                 float zDisplacement = (row - ((float) terrainSize - 1) / (float) 2) * scale * HeightMapMesh.getZLength();
 
-                GameItem terrainBlock = new GameItem(heightMapMesh.getMesh());
+                TerrainItem terrainBlock = new TerrainItem(heightMapMesh.getMesh(), new Vector3f(xDisplacement, 0, zDisplacement));
                 terrainBlock.setScale(scale);
-                terrainBlock.setPosition(xDisplacement, 0, zDisplacement);
-                gameItems[row * terrainSize + col] = terrainBlock;
+                terrainItems[row * terrainSize + col] = terrainBlock;
 
                 boundingBoxes[row][col] = getBoundingBox(terrainBlock);
             }
@@ -81,16 +108,35 @@ public class Terrain {
         stbi_image_free(buf);
     }
 
+    private float[][] generateHeights(int gridSize, PerlinNoise perlinNoise) {
+        float heights[][] = new float[gridSize][gridSize];
+        for (int z = 0; z < heights.length; z++) {
+            for (int x = 0; x < heights[z].length; x++) {
+//    //                heights[z][x] = perlinNoise.getPerlinNoise(x, z);
+//                float o = perlinNoise.getPerlinNoise(x, z);
+//                if(o < 0){
+//                heights[z][x] = x - minY / (maxY - minY);
+//                }else{
+                    heights[z][x] = perlinNoise.getPerlinNoise(x, z);
+//                }
+//                heights[z][x] = perlinNoise.getPerlinNoise(x, z);
+
+            }
+        }
+
+        return heights;
+    }
+
     public float getHeight(Vector3f position) {
         float result = Float.MIN_VALUE;
         // For each terrain block we get the bounding box, translate it to view coodinates
         // and check if the position is contained in that bounding box
         Box2D boundingBox = null;
         boolean found = false;
-        GameItem terrainBlock = null;
+        StaticGameItem terrainBlock = null;
         for (int row = 0; row < terrainSize && !found; row++) {
             for (int col = 0; col < terrainSize && !found; col++) {
-                terrainBlock = gameItems[row * terrainSize + col];
+                terrainBlock = terrainItems[row * terrainSize + col];
                 boundingBox = boundingBoxes[row][col];
                 found = boundingBox.contains(position.x, position.z);
             }
@@ -106,7 +152,7 @@ public class Terrain {
         return result;
     }
 
-    protected Vector3f[] getTriangle(Vector3f position, Box2D boundingBox, GameItem terrainBlock) {
+    protected Vector3f[] getTriangle(Vector3f position, Box2D boundingBox, StaticGameItem terrainBlock) {
         // Get the column and row of the heightmap associated to the current position
         float cellWidth = boundingBox.width / (float) verticesPerCol;
         float cellHeight = boundingBox.height / (float) verticesPerRow;
@@ -142,9 +188,9 @@ public class Terrain {
         return z;
     }
 
-    protected float getWorldHeight(int row, int col, GameItem gameItem) {
+    protected float getWorldHeight(int row, int col, StaticGameItem staticGameItem) {
         float y = heightMapMesh.getHeight(row, col);
-        return y * gameItem.getScale() + gameItem.getPosition().y;
+        return y * staticGameItem.getScale() + staticGameItem.getPosition().y;
     }
 
     protected float interpolateHeight(Vector3f pA, Vector3f pB, Vector3f pC, float x, float z) {
@@ -162,10 +208,10 @@ public class Terrain {
     /**
      * Gets the bounding box of a terrain block
      *
-     * @param terrainBlock A GameItem instance that defines the terrain block
+     * @param terrainBlock A StaticGameItem instance that defines the terrain block
      * @return The boundingg box of the terrain block
      */
-    private Box2D getBoundingBox(GameItem terrainBlock) {
+    private Box2D getBoundingBox(TerrainItem terrainBlock) {
         float scale = terrainBlock.getScale();
         Vector3f position = terrainBlock.getPosition();
 
@@ -177,8 +223,8 @@ public class Terrain {
         return boundingBox;
     }
 
-    public GameItem[] getGameItems() {
-        return gameItems;
+    public TerrainItem[] getGameItems() {
+        return terrainItems;
     }
 
     static class Box2D {

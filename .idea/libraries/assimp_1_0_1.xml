@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="assimp-1.0.1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/libs/assimp-1.0.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/glm-1.0.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/jna-4.2.2.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/jna-platform-4.2.2.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/joml-1.10.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/joou-0.9.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

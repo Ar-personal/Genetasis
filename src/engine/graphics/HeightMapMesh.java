@@ -41,6 +41,8 @@ public class HeightMapMesh {
 
     private List<Vector3f> colours;
 
+    private float amplitude;
+
 //    public HeightMapMesh(float minY, float maxY, ByteBuffer heightMapImage, int width, int height, String textureFile, int textInc) throws Exception {
 //        this.minY = minY;
 //        this.maxY = maxY;
@@ -96,7 +98,166 @@ public class HeightMapMesh {
 //        mesh.setMaterial(material);
 //    }
 
-    //textureless terrain
+    public HeightMapMesh(float minY, float maxY, float[][] heights, int width, int height, int textInc, float amplitude) throws Exception {
+        this.heightArray = heights;
+        this.minY = minY;
+        this.maxY = maxY;
+        this.amplitude = amplitude;
+
+        float incx = getXLength() / (width - 1);
+        float incz = getZLength() / (height - 1);
+
+        List positions = new ArrayList();
+        Vector3f[][] positionsVec = new Vector3f[height][width];
+        List<Float> texCoords = new ArrayList<>();
+        List<Integer> indices = new ArrayList<>();
+
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                // Create vertex for current position
+                positions.add(STARTX + col * incx); // x
+                float currentHeight = heights[row][col];
+                positions.add(currentHeight); //y
+                positions.add(STARTZ + row * incz); //z
+                positionsVec[row][col] = new Vector3f(STARTX + col * incx, currentHeight, STARTZ + row * incz);
+
+
+                texCoords.add((float) textInc * (float) col / (float) width);
+                texCoords.add((float) textInc * (float) row / (float) height);
+
+
+                // Create indices
+                if (col < width - 1 && row < height - 1) {
+                    int leftTop = row * width + col;
+                    int leftBottom = (row + 1) * width + col;
+                    int rightBottom = (row + 1) * width + col + 1;
+                    int rightTop = row * width + col + 1;
+
+                    indices.add(rightTop);
+                    indices.add(leftBottom);
+                    indices.add(rightBottom);
+
+                    indices.add(leftTop);
+                    indices.add(leftBottom);
+                    indices.add(rightTop);
+                }
+            }
+        }
+
+
+        float[] posArr = Utils.listToArray(positions);
+        int[] indicesArr = indices.stream().mapToInt(i -> i).toArray();
+        float[] texCoordsArr = Utils.listToArray(texCoords);
+        float[] normalsArr = calcNormals(posArr, width, height);
+
+        biomeColours = new Vector3f[]{new Vector3f((float) 201 / 255, (float) 178 / 255, (float) 99 / 255), new Vector3f((float) 135 /255, (float) 184 / 255, (float) 82 / 255), new Vector3f( (float) 80 / 255, (float) 171 /255, (float) 93 / 255),
+                new Vector3f((float) 120 / 255, (float) 120 / 255, (float) 120 / 255), new Vector3f((float) 200 / 256, (float) 200 / 255, (float)210 / 255), new Vector3f((float)177 / 255, (float)214 /255, (float)224 / 255)};
+
+//        float amplitude = 10f;
+
+        colours = new ArrayList<>();
+        for(int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                float h = positionsVec[i][j].y;
+                float spread = 0.6f;
+                float halfSpread = spread / 2;
+                float value = (h + amplitude) / (amplitude * 2);
+                value = Maths.clamp((value - halfSpread) * (1f / spread), 0f, 0.9999f);
+                float part = 1f / (biomeColours.length -1);
+                int firstBiome = (int) Math.floor(value / part);
+                float blend = (value - (firstBiome * part)) / part;
+//                float blend = 1f - h;
+//                float blend = amplitude * positionsVec[i][j].y;
+                    colours.add(Colour.interpolateColours(biomeColours[firstBiome], biomeColours[firstBiome + 1], blend, null));
+//                if (positionsVec[i][j].y > 0.1f) {
+////                    colours.add(Colour.interpolateColours(biomeColours[5], biomeColours[4], blend, null));
+//                    colours.add(biomeColours[3]);
+//                }
+//
+//                if (positionsVec[i][j].y < 0.1f) {
+////                    colours.add(Colour.interpolateColours(biomeColours[5], biomeColours[4], blend, null));
+//                    colours.add(biomeColours[0]);
+//                }
+
+//                if (positionsVec[i][j].y < -0.06f) {
+//                    colours.add(biomeColours[0]);
+//                }
+//
+//                if (positionsVec[i][j].y > -0.06f && positionsVec[i][j].y < -0.03f) {
+//
+//                    colours.add(Colour.interpolateColours(biomeColours[1], biomeColours[2], blend, null));
+//                }
+//
+//                if (positionsVec[i][j].y > -0.03f && positionsVec[i][j].y < 0.02) {
+//
+//                    colours.add(Colour.interpolateColours(biomeColours[2], biomeColours[3], blend, null));
+//                }
+//                Random rand = new Random();
+//                if (positionsVec[i][j].y > 0.02f && positionsVec[i][j].y < 0.07) {
+//                    colours.add(biomeColours[rand.nextInt(biomeColours.length -1)]);
+////                    colours.add(Colour.interpolateColours(biomeColours[3], biomeColours[4], blend, null));
+//                }
+//
+//                if (positionsVec[i][j].y > 0.07f && positionsVec[i][j].y < 0.1) {
+//
+//                    colours.add(Colour.interpolateColours(biomeColours[4], biomeColours[5], blend, null));
+//                }
+//
+//                if (positionsVec[i][j].y > 0.1f) {
+//                    colours.add(biomeColours[6]);
+//                }
+
+//
+//                if (positionsVec[i][j].y > 0.7f) {
+////                    colours.add(Colour.interpolateColours(biomeColours[5], biomeColours[4], blend, null));
+//                    colours.add(biomeColours[5]);
+//                }else
+//
+//                if (positionsVec[i][j].y > 0.06f && positionsVec[i][j].y < 0.07f) {
+////                    colours.add(Colour.interpolateColours(biomeColours[4], biomeColours[3], blend, null));
+//                    colours.add(biomeColours[4]);
+//                }else
+//
+//                if (positionsVec[i][j].y > 0.03f && positionsVec[i][j].y < 0.04f) {
+////                    colours.add(Colour.interpolateColours(biomeColours[3], biomeColours[2], blend, null));
+//                    colours.add(biomeColours[3]);
+//                }else
+//
+//                if (positionsVec[i][j].y > 0.02f && positionsVec[i][j].y < 0.03f) {
+////                  colours.add(Colour.interpolateColours(biomeColours[2], biomeColours[1], blend, null));
+//                    colours.add(biomeColours[2]);
+//                }else
+//
+//                if (positionsVec[i][j].y > 0.01f && positionsVec[i][j].y < 0.02f) {
+////                    colours.add(Colour.interpolateColours(biomeColours[1], biomeColours[0], blend, null));
+//                    colours.add(biomeColours[1]);
+//                }
+
+
+            }
+        }
+
+        float[] floatColour = new float[(width * height) * 3];
+        int index = 0;
+        for (int o = 0; o < colours.size(); o++){
+            floatColour[index] = colours.get(o).x;
+            floatColour[index + 1] = colours.get(o).y;
+            floatColour[index + 2] = colours.get(o).z;
+            if(index + 3 >= floatColour.length){
+                continue;
+            }else {
+                index += 3;
+            }
+        }
+
+        System.out.println("indices length: " + indicesArr.length + " colors length: " + floatColour.length + " heightlist length: " + " positions length: " + posArr.length + " height array length: ");
+
+
+        this.mesh = new Mesh(posArr, texCoordsArr, floatColour, normalsArr, indicesArr, false);
+        this.mesh.setMaterial(null);
+    }
+
+    //textureless terrain with heightmap file
     public HeightMapMesh(float minY, float maxY, ByteBuffer heightMapImage, int width, int height, int textInc) throws Exception {
         this.minY = minY;
         this.maxY = maxY;
@@ -242,7 +403,7 @@ public class HeightMapMesh {
 //            }
 
         System.out.println("indices length: " + indicesArr.length + " colors length: " + floatColour.length + " heightlist length: " + heightList.size() + " positions length: " + posArr.length + " height array length: ");
-        this.mesh = new Mesh(posArr, texCoordsArr, floatColour, normalsArr, indicesArr);
+        this.mesh = new Mesh(posArr, texCoordsArr, floatColour, normalsArr, indicesArr, false);
 //        mesh.setMaterial(new Material(new Vector4f(0, 1, 0.0f, 1), 0.0f));
 //        mesh.setMaterial(new Material());
     }

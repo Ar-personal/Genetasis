@@ -198,7 +198,7 @@ float calcShadow(vec4 position)
 void main()
 {
 
-//    setupColours(material, outTexCoord);
+//    setupColours(material);
 
 
     vec3 currNomal = calcNormal(material, mvVertexNormal, outTexCoord, outModelViewMatrix);
@@ -222,11 +222,14 @@ void main()
     }
 
     float shadow = calcShadow(mlightviewVertexPos);
-//    fragColor = clamp(ambientC * vec4(ambientLight, 1) + diffuseSpecularComp * shadow, 0, 1);
+
     fragColor = vec4(exColour, 1.0);
 
-    if ( fog.activeFog == 1 )
-    {
-        fragColor = calcFog(mvVertexPos, fragColor, fog, ambientLight, directionalLight);
-    }
+//    fragColor = clamp(ambientC * vec4(ambientLight, 1) + diffuseSpecularComp * shadow, 0, 1);
+//    fragColor = vec4(exColour, 1.0);
+
+//    if ( fog.activeFog == 1 )
+//    {
+//        fragColor = calcFog(mvVertexPos, fragColor, fog, ambientLight, directionalLight);
+//    }
 }

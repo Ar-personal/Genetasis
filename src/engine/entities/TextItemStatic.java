@@ -1,15 +1,15 @@
-package engine.utils;
+package engine.entities;
 
 import engine.graphics.Material;
 import engine.graphics.Mesh;
-import main.GameItem;
-import main.Texture;
+import engine.utils.FontTexture;
+import engine.utils.Utils;
+import main.Hud;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TextItem extends GameItem {
+public class TextItemStatic extends HudItem {
 
     private static final float ZPOS = 0.0f;
 
@@ -19,8 +19,8 @@ public class TextItem extends GameItem {
 
     private String text;
 
-    public TextItem(String text, FontTexture fontTexture) throws Exception {
-        super();
+    public TextItemStatic(String text, FontTexture fontTexture) throws Exception {
+        super(null);
         this.text = text;
         this.fontTexture = fontTexture;
         setMesh(buildMesh());
@@ -82,7 +82,7 @@ public class TextItem extends GameItem {
         float[] posArr = Utils.listToArray(positions);
         float[] textCoordsArr = Utils.listToArray(textCoords);
         int[] indicesArr = indices.stream().mapToInt(i->i).toArray();
-        Mesh mesh = new Mesh(posArr, textCoordsArr, null, normals, indicesArr);
+        Mesh mesh = new Mesh(posArr, textCoordsArr, null, normals, indicesArr, false);
         mesh.setMaterial(new Material(fontTexture.getTexture()));
         return mesh;
     }

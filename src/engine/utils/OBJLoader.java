@@ -7,15 +7,22 @@ import org.joml.Vector3f;
 import java.util.ArrayList;
 import java.util.List;
 
+
+
 public class OBJLoader {
 
-    public static Mesh loadMesh(String fileName) throws Exception {
+    private boolean wireFrame;
+
+    public Mesh loadMesh(String fileName, Vector3f color, Boolean wireFrame) throws Exception {
+        this.wireFrame = wireFrame;
         List<String> lines = Utils.readAllLines(fileName);
 
         List<Vector3f> vertices = new ArrayList<>();
         List<Vector2f> textures = new ArrayList<>();
         List<Vector3f> normals = new ArrayList<>();
         List<Face> faces = new ArrayList<>();
+        List<Vector3f> colours = new ArrayList<>();
+
 
         for (String line : lines) {
             String[] tokens = line.split("\\s+");
@@ -27,6 +34,16 @@ public class OBJLoader {
                             Float.parseFloat(tokens[2]),
                             Float.parseFloat(tokens[3]));
                     vertices.add(vec3f);
+                    break;
+                case "vc":
+                    // Geometric vertex
+                    if(color == null) {
+                        Vector3f vec3fcolour = new Vector3f(
+                                Float.parseFloat(tokens[1]),
+                                Float.parseFloat(tokens[2]),
+                                Float.parseFloat(tokens[3]));
+                        colours.add(vec3fcolour);
+                    }
                     break;
                 case "vt":
                     // Texture coordinate
@@ -52,7 +69,7 @@ public class OBJLoader {
                     break;
             }
         }
-        return reorderLists(vertices, textures, normals, faces);
+        return reorderLists(vertices, textures, colours, normals, faces, color);
 
     }
 
@@ -112,8 +129,8 @@ public class OBJLoader {
     }
 
 
-    private static Mesh reorderLists(List<Vector3f> posList, List<Vector2f> textCoordList,
-                                     List<Vector3f> normList, List<Face> facesList) {
+    private Mesh reorderLists(List<Vector3f> posList, List<Vector2f> textCoordList, List<Vector3f> colours,
+                                     List<Vector3f> normList, List<Face> facesList, Vector3f colour) {
 
         List<Integer> indices = new ArrayList();
         // Create position array in the order it has been declared
@@ -137,7 +154,27 @@ public class OBJLoader {
         }
         int[] indicesArr = new int[indices.size()];
         indicesArr = indices.stream().mapToInt((Integer v) -> v).toArray();
-        Mesh mesh = new Mesh(posArr, textCoordArr, null, normArr, indicesArr);
+
+        float[] cols = new float[posArr.length];
+        int k = 0;
+        //add colours to .obj meshes
+        if(colour == null) {
+            for (Vector3f colourList : colours) {
+                cols[k * 3] = colourList.x;
+                cols[k * 3 + 1] = colourList.y;
+                cols[k * 3 + 2] = colourList.z;
+                k++;
+            }
+        }else {
+            for (int j = 0; j < cols.length; j+= 3) {
+                cols[j] = colour.x / 255;
+                cols[j + 1] = colour.y / 255;
+                cols[j + 2] = colour.z / 255;
+            }
+        }
+
+
+        Mesh mesh = new Mesh(posArr, textCoordArr, cols, normArr, indicesArr, wireFrame);
         return mesh;
     }
 
