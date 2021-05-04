@@ -3,38 +3,54 @@ package engine.entities;
 import engine.graphics.Mesh;
 import engine.objects.Terrain;
 import main.Box3D;
+import main.Scene;
 import org.joml.Random;
 import org.joml.Vector3f;
+import org.lwjgl.system.CallbackI;
+import org.lwjglx.util.glu.GLU;
+
+import java.sql.Time;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Deer extends Animal {
 
+    protected Scene scene;
     protected Mesh mesh;
-    protected Vector3f position, destination, moveVector;
+    protected Vector3f position, destination, moveVector = new Vector3f();;
     protected Vector3f rotation = new Vector3f();
+    protected Plant objectTarget;
     protected float awareness = 1f;
-    protected int hunger = 0;
+    protected float hunger = 20f;
+    protected float maxHunger;
     protected int thirst = 0;
     protected float size;
     protected float speed;
+    protected float awarenessScale;
     protected int health = 0;
     protected int stamina;
     protected int energy;
     protected float[] awarenessCubePositions;
-    protected boolean walkingToPoint = false;
+    protected boolean wandering = false, goingToFood = false, idle = false;
     protected long startTime, elapsedTime, elapsedSeconds;
 
+
     protected float width, height, length;
+    protected float angle = 0;
+
 
     protected Mesh boundingMesh, awarenessMesh, destinationPointMesh;
     protected BoundingBox boundingBox, awarenessBox, destinationPoint;
     protected Terrain terrain;
+    protected List<Plant> intersectingPlantObjects = null;
 
-    public Deer(Mesh mesh, Vector3f position, float awareness, int hunger, int thirst, float speed, int health, int stamina, int energy, float size) {
+    public Deer(Scene scene, Mesh mesh, Vector3f position, float awareness, float maxHunger, int thirst, float speed, int health, int stamina, int energy, float size) {
         super(mesh);
+        this.scene = scene;
         this.mesh = mesh;
         this.position = position;
         this.awareness = awareness;
-        this.hunger = hunger;
+        this.maxHunger = maxHunger;
         this.thirst = thirst;
         this.speed = speed;
         this.health = health;
@@ -43,10 +59,14 @@ public class Deer extends Animal {
         this.size = size;
 
         init();
+        elapsedTime = System.currentTimeMillis() - startTime;
+        elapsedSeconds = elapsedTime / 1000;
+        walkToPoint();
     }
 
     public void init(){
         startTime = System.currentTimeMillis();
+        setRotation(0, 0, 0);
 
         float[] positions = new float[]{
 
@@ -96,21 +116,21 @@ public class Deer extends Animal {
 
         awarenessCubePositions = new float[]{
                 // VO
-                -0.5f,  0.5f,  0.5f,
+                -0.5f,  0.5f ,  0.5f,
                 // V1
-                -0.5f, -0.5f,  0.5f,
+                -0.5f , -0.5f,  0.5f,
                 // V2
-                0.5f, -0.5f,  0.5f,
+                0.5f , -0.5f,  0.5f ,
                 // V3
-                0.5f,  0.5f,  0.5f,
+                0.5f ,  0.5f,  0.5f,
                 // V4
                 -0.5f,  0.5f, -0.5f,
                 // V5
-                0.5f,  0.5f, -0.5f,
+                0.5f ,  0.5f, -0.5f,
                 // V6
-                -0.5f, -0.5f, -0.5f,
+                -0.5f , -0.5f, -0.5f,
                 // V7
-                0.5f, -0.5f, -0.5f,
+                0.5f , -0.5f, -0.5f,
         };
 
         height = mesh.getHeight();
@@ -121,12 +141,14 @@ public class Deer extends Animal {
 
 
         awarenessMesh = new Mesh(awarenessCubePositions, null, colours, null, indices, false);
-        awarenessBox = new BoundingBox(awarenessMesh, new Vector3f(position.x, position.y + (awareness * 0.25f), position.z));
+        awarenessBox = new BoundingBox(awarenessMesh, new Vector3f(position.x, position.y, position.z));
+
+        //todo figure out how to scale the mesh to the same size as true box size
         awarenessBox.setScale(awareness);
 
 
         destinationPointMesh = new Mesh(awarenessCubePositions, null, colours, null, indices, false);
-        destinationPoint = new BoundingBox(destinationPointMesh, new Vector3f(0, 0, 0));
+        destinationPoint = new BoundingBox(destinationPointMesh, new Vector3f(position.x, position.y, position.z));
         destinationPoint.setScale(0.1f);
 
 
@@ -135,72 +157,145 @@ public class Deer extends Animal {
 
     @Override
     public void update() {
+        //deer gets hungry
 
-        if(position.y > terrain.getHeight(position)){
+        calculateStats();
+
+        if(position.y > terrain.getHeight(position) && position.y - 0.005 > terrain.getHeight(position)){
             position.y -= 0.005f;
-
         }else{
             position.y = terrain.getHeight(position);
             jump();
         }
 
         boundingBox.setPosition(position.x, position.y, position.z);
-        awarenessBox.setPosition(position.x, position.y +(awareness * 0.25f), position.z);
+        awarenessBox.setPosition(position.x, position.y, position.z);
 
         elapsedTime = System.currentTimeMillis() - startTime;
         elapsedSeconds = elapsedTime / 1000;
 
-        System.out.println("elapsed seconds : " + elapsedSeconds);
-        if(!walkingToPoint) {
-            if(elapsedSeconds > 5) {
-                System.out.println("calculating new destination");
-                walkToPoint();
-            }
-        }else{
-            moveVector = new Vector3f();
-            moveVector.x = destination.x - position.x;
-            moveVector.y = 0;
-            moveVector.z = destination.z - position.z;
-            moveVector.normalize();
+//        System.out.println("elapsed seconds : " + elapsedSeconds);
+        if(canEat() && idle){
+            System.out.println("walking to food");
+            destination.x = objectTarget.getPosition().x;
+            destination.y = objectTarget.getPosition().y;
+            destination.z = objectTarget.getPosition().z;
+            idle = false;
+        }
 
-            setRotation(destination.x, destination.y, destination.z);
+        Random random = new Random();
+        int r = random.nextInt(6);
+        if (!canEat() && idle && elapsedSeconds > r) {
+            System.out.println("calculating new destination");
+            walkToPoint();
+        }
 
-            if (destination.x - position.x > 0.001f || destination.z - position.z > 0.001f) {
-                position.x += (moveVector.x * speed);
-                position.z += (moveVector.z * speed);
-                System.out.println("moving x axis");
+        destinationPoint.setPosition(destination.x, position.y, destination.z);
+        if(destination != null && elapsedSeconds > r) {
+            moveToDestination();
+        }
+
+
+        //check for intersections with food only when the deer isn't idle, may need to specify idle to if deer is eating or doing another activity
+        if(objectTarget != null && !idle) {
+            if (boxIntersection(boundingBox, objectTarget.getBoundingBox())) {
+                System.out.println("collide");
+                scene.removeItem(objectTarget);
+                scene.removeItem(objectTarget.getBoundingBox());
+                intersectingPlantObjects.remove(objectTarget);
+                hunger += objectTarget.getFoodValue();
+                if(hunger > maxHunger){
+                    hunger = maxHunger;
+                }
             }
+        }
+
+    }
+
+    public void calculateStats(){
+        hunger -= 0.001f;
+        if(hunger <= 0){
+            scene.removeItem(this);
+            scene.removeItem(this.boundingBox);
+            scene.removeItem(this.awarenessBox);
+        }
+    }
+
+    public void moveToDestination(){
+        //get unit vector of the destination
+        moveVector.x = destination.x - position.x;
+        moveVector.y = 0;
+        moveVector.z = destination.z - position.z;
+        moveVector.normalize();
+
+//            rotation = new Vector3f(0,  90f, 0);
+//            Vector3f p = new Vector3f(position);
+//            Vector3f dd = new Vector3f(destination);
+//            Vector3f d = dd.sub(p);
+//            Vector3f directionA = p.normalize();
+//            Vector3f directionB = d.normalize();
+//
+//            float angle = (float) Math.acos(directionA.dot(directionB));
+//            float angleDeg = (float) Math.toDegrees(angle);
+//            float ang = rotation.y - angleDeg;
+////
+////            while(ang < 0){
+////                ang += 360f;
+////            }
+////
+//            System.out.println(angle + " " + angleDeg + " " + ang);
+//            float a = rotation.y - ang;
+//            float theta = 0;
+//            if(a < 180f){
+//                theta -= 1f;
+//            }else if(a > 180f){
+//                theta += 1f;
+//                rotation = new Vector3f(0,  rotation.y + theta, 0);
+//            }
+//            boundingBox.setRotation(0, rotation, 0);
+//            awarenessBox.setRotation(0, ang, 0);
+
+        //check if the deer is within a certain threshold in range of the target, speed may be a good step
+        //check for collission
+        if (destination.x - position.x > speed || destination.z - position.z > speed) {
+            position.x += (moveVector.x * speed);
+            position.z += (moveVector.z * speed);
+        }
 
 //            if (destination.z - position.z > 0.01f) {
 //                position.z += (moveVector.z * speed);
 //                System.out.println("moving z axis");
 //            }
 
-            if(destination.x - position.x < 0.01 && destination.z - position.z < 0.001){
-                walkingToPoint = false;
-                System.out.println("reached destination");
-                startTime = System.currentTimeMillis();
-                elapsedTime = 0;
-                elapsedSeconds = 0;
-            }
+        //if deer box intersects food box
+        //add hunger value
+        //
+
+
+        if(destination.x - position.x < speed && destination.z - position.z < speed){
+            //collision detected
+            idle = true;
+            System.out.println("reached destination " + canEat() + " " + idle + " hunger: " + hunger);
+            startTime = System.currentTimeMillis();
+            elapsedTime = 0;
+            elapsedSeconds = 0;
         }
     }
 
 
     public void walkToPoint(){
-        walkingToPoint = true;
-
+        idle = false;
         destination = new Vector3f();
         Random random = new Random();
-        float xMin = awarenessBox.getMesh().getMinX();
-        float xMax = awarenessBox.getMesh().getMaxX();
-        float xDest = random.nextFloat() * (xMax - xMin) + xMin;
-        float yMin = awarenessBox.getMesh().getMinY();
-        float yMax = awarenessBox.getMesh().getMaxY();
-        float yDest = random.nextFloat() * (yMax - yMin) + yMin;
-        float zMin = awarenessBox.getMesh().getMinZ();
-        float zMax = awarenessBox.getMesh().getMaxZ();
-        float zDest = random.nextFloat() * (zMax - zMin) + zMin;
+        float xMin = awarenessBox.getMesh().getMinX() * awarenessBox.getScale() + position.x;
+        float xMax = awarenessBox.getMesh().getMaxX() * awarenessBox.getScale() + position.x;
+        float xDest = (random.nextFloat() * (xMax - xMin) + xMin);
+        float yMin = awarenessBox.getMesh().getMinY() * awarenessBox.getScale() + position.y;
+        float yMax = awarenessBox.getMesh().getMaxY() * awarenessBox.getScale() + position.y;
+        float yDest = (random.nextFloat() * (yMax - yMin) + yMin);
+        float zMin = awarenessBox.getMesh().getMinZ() * awarenessBox.getScale() + position.z;
+        float zMax = awarenessBox.getMesh().getMaxZ() * awarenessBox.getScale() + position.z;
+        float zDest = (random.nextFloat() * (zMax - zMin) + zMin);
 
         destination.x = xDest;
         destination.y = yDest;
@@ -221,13 +316,50 @@ public class Deer extends Animal {
         }
     }
 
-    public float getWidth() {
-        return width;
+    public boolean canEat(){
+        if(hunger <= maxHunger / 2f) {
+            if (intersectingPlantObjects != null) {
+                for (Plant g : intersectingPlantObjects) {
+                    if (g instanceof Grass) {
+                        objectTarget = g;
+                        goingToFood = true;
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
-    public void setWidth(float width) {
-        this.width = width;
+
+    public boolean boxIntersection(BoundingBox thisBox, BoundingBox otherBox){
+        float f1 = thisBox.getScale();
+        float f2 = otherBox.getScale();
+        return (thisBox.getMesh().getMinX() * f1 + thisBox.getPosition().x <= otherBox.getMesh().getMaxX() * f2 + otherBox.getPosition().x && thisBox.getMesh().getMaxX() * f1 + thisBox.getPosition().x >= otherBox.getMesh().getMinX() * f2 + otherBox.getPosition().x) &&
+                (thisBox.getMesh().getMinY() * f1 + thisBox.getPosition().y <= otherBox.getMesh().getMaxY() * f2 + otherBox.getPosition().y && thisBox.getMesh().getMaxY() * f1 + thisBox.getPosition().y >= otherBox.getMesh().getMinY() * f2 + otherBox.getPosition().y) &&
+                (thisBox.getMesh().getMinZ() * f1 + thisBox.getPosition().z <= otherBox.getMesh().getMaxZ() * f2 + otherBox.getPosition().z && thisBox.getMesh().getMaxZ() * f1 + thisBox.getPosition().z >= otherBox.getMesh().getMinZ() * f2 + otherBox.getPosition().z);
     }
+
+
+    public void addIntersectingPlantObject(Plant object) {
+        if(intersectingPlantObjects == null){
+            intersectingPlantObjects = new ArrayList<>();
+        }
+        intersectingPlantObjects.add(object);
+    }
+
+    public void removeIntersectingObject(GameItem object) {
+        if(intersectingPlantObjects == null){
+            intersectingPlantObjects = new ArrayList<Plant>();
+        }
+        intersectingPlantObjects.remove(object);
+    }
+
+
+    public List<Plant> getIntersectingObjects() {
+        return intersectingPlantObjects;
+    }
+
 
     public float getHeight() {
         return height;
@@ -303,11 +435,11 @@ public class Deer extends Animal {
         this.awareness = awareness;
     }
 
-    public int getHunger() {
+    public float getHunger() {
         return hunger;
     }
 
-    public void setHunger(int hunger) {
+    public void setHunger(float hunger) {
         this.hunger = hunger;
     }
 

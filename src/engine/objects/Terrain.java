@@ -44,7 +44,7 @@ public class Terrain {
         verticesPerCol = width - 1;
         verticesPerRow = height - 1;
         float amplitude = 0.3f;
-        float[][] heights = generateHeights(width, new PerlinNoise(6, 0.3f, 0.35f));
+        float[][] heights = generateHeights(width, new PerlinNoise(6, 0.40f, 0.55f));
         heightMapMesh = new HeightMapMesh(minY, maxY, heights, width, height, textInc, amplitude);
 
 
@@ -217,10 +217,14 @@ public class Terrain {
 
         float topLeftX = HeightMapMesh.STARTX * scale + position.x;
         float topLeftZ = HeightMapMesh.STARTZ * scale + position.z;
-        float width = Math.abs(HeightMapMesh.STARTX * 2) * scale;
-        float height = Math.abs(HeightMapMesh.STARTZ * 2) * scale;
+        float width = Math.abs(HeightMapMesh.STARTX * 8) * scale;
+        float height = Math.abs(HeightMapMesh.STARTZ * 8) * scale;
         Box2D boundingBox = new Box2D(topLeftX, topLeftZ, width, height);
         return boundingBox;
+    }
+
+    public Box2D[][] getBoundingBoxes() {
+        return boundingBoxes;
     }
 
     public TerrainItem[] getGameItems() {
@@ -237,9 +241,10 @@ public class Terrain {
 
         public float height;
 
+        //set size of 2d box
         public Box2D(float x, float y, float width, float height) {
-            this.x = x;
-            this.y = y;
+            this.x = x - 10f;
+            this.y = y - 10f;
             this.width = width;
             this.height = height;
         }
@@ -249,6 +254,22 @@ public class Terrain {
                     && y2 >= y
                     && x2 < x + width
                     && y2 < y + height;
+        }
+
+        public float getX() {
+            return x;
+        }
+
+        public void setX(float x) {
+            this.x = x;
+        }
+
+        public float getY() {
+            return y;
+        }
+
+        public void setY(float y) {
+            this.y = y;
         }
     }
 }

@@ -423,11 +423,11 @@ public class HeightMapMesh {
     }
 
     public static float getXLength() {
-        return Math.abs(-STARTX*2);
+        return Math.abs(-STARTX*8);
     }
 
     public static float getZLength() {
-        return Math.abs(-STARTZ*2);
+        return Math.abs(-STARTZ*8);
     }
 
     private float[] calcNormals(float[] posArr, int width, int height) {

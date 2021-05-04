@@ -21,10 +21,25 @@ public class Bush extends Plant {
     }
 
     @Override
+    public float getFoodValue() {
+        return 0;
+    }
+
+    @Override
+    public void setFoodValue(float foodValue) {
+
+    }
+
+    @Override
     public void setPosition(float x, float y, float z) {
         this.position.x = x;
         this.position.y = y;
         this.position.z = z;
+    }
+
+    @Override
+    protected BoundingBox getBoundingBox() {
+        return null;
     }
 
     @Override

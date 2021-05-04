@@ -32,6 +32,11 @@ public class HudItem extends StaticGameItem{
     }
 
     @Override
+    protected BoundingBox getBoundingBox() {
+        return null;
+    }
+
+    @Override
     public float getScale() {
         return scale;
     }

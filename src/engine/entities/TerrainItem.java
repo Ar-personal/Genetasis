@@ -21,6 +21,18 @@ public class TerrainItem extends StaticGameItem {
     }
 
     @Override
+    public void setPosition(float x, float y, float z) {
+        this.position.x = x;
+        this.position.y = y;
+        this.position.z = z;
+    }
+
+    @Override
+    protected BoundingBox getBoundingBox() {
+        return null;
+    }
+
+    @Override
     public float getScale() {
         return scale;
     }

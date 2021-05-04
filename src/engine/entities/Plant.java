@@ -13,4 +13,8 @@ public abstract class Plant extends StaticGameItem {
 
     @Override
     public abstract void update();
+
+    public abstract float getFoodValue();
+
+    public abstract void setFoodValue(float foodValue);
 }

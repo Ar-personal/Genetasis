@@ -1,5 +1,6 @@
 package engine.objects;
 
+import engine.entities.BoundingBox;
 import engine.entities.StaticGameItem;
 import engine.graphics.Material;
 import engine.graphics.Mesh;
@@ -31,6 +32,18 @@ public class SkyBox extends StaticGameItem {
     @Override
     public Vector3f getPosition() {
         return position;
+    }
+
+    @Override
+    public void setPosition(float x, float y, float z) {
+        this.position.x = x;
+        this.position.y = y;
+        this.position.z = z;
+    }
+
+    @Override
+    protected BoundingBox getBoundingBox() {
+        return null;
     }
 
     @Override

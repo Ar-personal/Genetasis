@@ -11,11 +11,7 @@ public abstract class StaticGameItem extends GameItem {
 
     public abstract Vector3f getPosition();
 
-    public void setPosition(float x, float y, float z) {
-        this.position.x = x;
-        this.position.y = y;
-        this.position.z = z;
-    }
+    public abstract void setPosition(float x, float y, float z);
 
     public abstract float getScale();
 

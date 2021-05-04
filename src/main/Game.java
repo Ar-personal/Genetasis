@@ -5,11 +5,13 @@ import engine.graphics.*;
 import engine.objects.Camera;
 import engine.objects.Terrain;
 import engine.utils.OBJLoader;
-import jglm.Vec;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.lwjgl.system.CallbackI;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -54,6 +56,7 @@ public class Game implements IGameLogic {
     private BoundingBox cubeStaticGameItem;
 
     private Bush bush1, bush2, bush3, bush4, bush5, bush6;
+    private Grass grass;
 
     private Deer deer;
 
@@ -63,6 +66,7 @@ public class Game implements IGameLogic {
     public Game() {
         renderer = new Renderer();
         camera = new Camera();
+        camera.setPosition(0, 0.5f, 0);
         cameraInc = new Vector3f(0.0f, 0.0f, 0.0f);
         lightAngle = -90;
         angleInc = 0;
@@ -72,7 +76,27 @@ public class Game implements IGameLogic {
     public void init(Window window) throws Exception {
         renderer.init(window);
 
-        scene = new Scene();
+
+
+        //create and load the terrain
+        float terrainScale = 10;
+        int terrainSize = 1;
+        float minY = 0f;
+        float maxY = 1f;
+        int textInc = 40;
+//        terrain = new Terrain(terrainSize, terrainScale, minY, maxY, "C:\\Users\\Alex\\Dropbox\\Game Design\\Genetasis\\resources\\textures\\heightmap.png", null, textInc);
+        terrain = new Terrain(terrainSize, terrainScale, minY, maxY, textInc);
+        scene = new Scene(this, terrain);
+        StaticGameItem[] items = terrain.getGameItems();
+
+        for(int i = 0; i < items.length; i++) {
+            scene.addStaticGameItem(items[i]);
+            items[i].setPosition(-10, 0 ,-10);
+
+        }
+
+        scene.addDeers(5);
+
 
         // Setup  GameItems
         float reflectance = 1f;
@@ -80,7 +104,7 @@ public class Game implements IGameLogic {
         Mesh cubeMesh = new OBJLoader().loadMesh("/models/cube.obj", null, true);
         Mesh bush1Mesh = new OBJLoader().loadMesh("/models/Bush1.obj", new Vector3f(144, 156, 30), false);
         Mesh bush2Mesh = new OBJLoader().loadMesh("/models/BerryBush1.obj", new Vector3f(40, 15, 30), false);
-        Mesh deerMesh = new OBJLoader().loadMesh("/models/Deer.obj", new Vector3f(60, 15, 30), false);
+        Mesh grassMesh = new OBJLoader().loadMesh("/models/grass.obj", new Vector3f(50, 255, 50), false);
 //        Mesh bush3Mesh = OBJLoader.loadMesh("/models/Bush3.obj", new Vector3f(144, 16, 80));
 //        Mesh bush4Mesh = OBJLoader.loadMesh("/models/BerryBush1.obj", new Vector3f(90, 196, 30));
 //        Mesh bush5Mesh = OBJLoader.loadMesh("/models/BerryBush2.obj", new Vector3f(18, 209, 30));
@@ -89,17 +113,22 @@ public class Game implements IGameLogic {
         Material cubeMaterial = new Material();
 //        cubeMesh.setMaterial(cubeMaterial);
 //        bush1Mesh.setMaterial(cubeMaterial);
-        cubeStaticGameItem = new BoundingBox(cubeMesh, new Vector3f(0, 2, 0));
+        cubeStaticGameItem = new BoundingBox(cubeMesh, randomSpawn());
         cubeStaticGameItem.setScale(0.1f);
 
-        bush1 = new Bush(bush1Mesh, new Vector3f(0.1f, 0.5f, 0));
-        bush1.setScale(0.1f);
+        bush1 = new Bush(bush1Mesh, randomSpawn());
+        bush1.setScale(0.2f);
 
-        bush2 = new Bush(bush2Mesh, new Vector3f(0.6f, 0.5f, 0));
-        bush2.setScale(0.1f);
+        bush2 = new Bush(bush2Mesh, randomSpawn());
+        bush2.setScale(0.2f);
 
-        deer = new Deer(deerMesh, new Vector3f(0.6f, 1f, 0), 2f, 0, 0, 0.003f, 10, 10, 50, 0.0009f);
-        deer.setScale(0.0009f);
+
+        for(int i = 0; i < 90; i++) {
+            grass = new Grass(grassMesh, randomSpawn());
+            grass.setScale(0.1f);
+            scene.addStaticGameItem(grass);
+//            scene.addBoundingBox(grass.getBoundingBox());
+        }
 //        bush4 = new StaticGameItem(bush4Mesh);
 //        bush4.setPosition(0.4f, 0.5f, 0);
 //        bush4.setScale(0.5f);
@@ -114,26 +143,9 @@ public class Game implements IGameLogic {
 
 
 
-        float terrainScale = 10;
-        int terrainSize = 1;
-        float minY = 0f;
-        float maxY = 1f;
-        int textInc = 40;
-//        terrain = new Terrain(terrainSize, terrainScale, minY, maxY, "C:\\Users\\Alex\\Dropbox\\Game Design\\Genetasis\\resources\\textures\\heightmap.png", null, textInc);
-        terrain = new Terrain(terrainSize, terrainScale, minY, maxY, textInc);
-        StaticGameItem[] items = terrain.getGameItems();
-        for(int i = 0; i < items.length; i++) {
-            scene.addStaticGameItem(items[i]);
-        }
 
-        scene.addDynamicGameItem(cubeStaticGameItem);
-        scene.addStaticGameItem(bush1);
-        scene.addStaticGameItem(bush2);
-        scene.addDynamicGameItem(deer);
-//        scene.addBoundingBox(deer.getBoundingBox());
-//        scene.addBoundingBox(deer.getAwarenessBox());
-//        scene.addBoundingBox(deer.getDestinationPoint());
-        deer.setTerrain(terrain);
+;
+
 //        scene.addStaticGameItem(bush4);
 //        scene.addStaticGameItem(bush5);
 //        scene.addStaticGameItem(bush6);
@@ -167,10 +179,22 @@ public class Game implements IGameLogic {
         sceneLight.setDirectionalLight(directionalLight);
     }
 
+    public Vector3f randomSpawn(){
+        Random r = new Random();
+        float x = r.nextFloat() * 30f - 10f;
+        float z = r.nextFloat() * 30f - 10f;
+        float y = r.nextFloat();
+        //10f for world offset
+        Vector3f vec = new Vector3f(x, 1f , z);
+        float pos = terrain.getHeight(vec);
+
+        return new Vector3f(x, pos, z);
+    }
+
 
     @Override
     public void input(Window window, MouseInput mouseInput) {
-        float cameraspeed = 0.4f;
+        float cameraspeed = 2f;
         cameraInc.set(0, 0, 0);
         if (window.isKeyPressed(GLFW_KEY_W)) {
             cameraInc.z = -cameraspeed;
@@ -200,13 +224,7 @@ public class Game implements IGameLogic {
 
     @Override
     public void update(float interval, MouseInput mouseInput) {
-        if(gameItems != null) {
-            for (GameItem gameItem : gameItems) {
-                gameItem.update();
-
-
-            }
-        }
+        scene.update();
 
         // Update camera based on mouse
         if (mouseInput.isRightButtonPressed()) {
@@ -271,6 +289,10 @@ public class Game implements IGameLogic {
         if (hud != null) {
             hud.cleanup();
         }
+    }
+
+    public Scene getScene() {
+        return scene;
     }
 
 }

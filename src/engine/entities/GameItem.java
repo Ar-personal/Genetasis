@@ -35,4 +35,6 @@ public abstract class GameItem {
     public abstract void setRotation(float x, float y, float z);
 
     public abstract void setPosition(float x, float y, float z);
+
+    protected abstract BoundingBox getBoundingBox();
 }

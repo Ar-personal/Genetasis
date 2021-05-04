@@ -44,6 +44,11 @@ public class BoundingBox extends DynamicGameItem {
     }
 
     @Override
+    protected BoundingBox getBoundingBox() {
+        return this;
+    }
+
+    @Override
     public void setScale(float scale) {
         this.scale = scale;
     }

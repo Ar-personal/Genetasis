@@ -1,5 +1,6 @@
 package main;
 
+import engine.entities.BoundingBox;
 import engine.entities.GameItem;
 import engine.entities.StaticGameItem;
 import engine.graphics.Mesh;
@@ -54,6 +55,11 @@ public class Box3D extends StaticGameItem {
         this.position.x = x;
         this.position.y = y;
         this.position.z = z;
+    }
+
+    @Override
+    protected BoundingBox getBoundingBox() {
+        return null;
     }
 
     @Override
