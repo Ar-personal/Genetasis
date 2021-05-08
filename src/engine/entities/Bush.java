@@ -38,9 +38,20 @@ public class Bush extends Plant {
     }
 
     @Override
-    protected BoundingBox getBoundingBox() {
+    public BoundingBox getBoundingBox() {
         return null;
     }
+
+    @Override
+    public boolean isSelected() {
+        return false;
+    }
+
+    @Override
+    public void setSelected(boolean selected) {
+
+    }
+
 
     @Override
     public float getScale() {

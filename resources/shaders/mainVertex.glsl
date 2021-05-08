@@ -13,16 +13,19 @@ out vec3 mvVertexPos;
 out vec4 mlightviewVertexPos;
 out mat4 outModelViewMatrix;
 flat out vec3 exColour;
+out float outSelected;
 
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 modelLightViewMatrix;
 uniform mat4 orthoProjectionMatrix;
+uniform float selected;
 
 void main()
 {
     vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
     gl_Position = projectionMatrix * mvPos;
+    outSelected = selected;
     exColour = inColour;
     outTexCoord = texCoord;
     mvVertexNormal = normalize(modelViewMatrix * vec4(vertexNormal, 0.0)).xyz;

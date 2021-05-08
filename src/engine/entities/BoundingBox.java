@@ -44,9 +44,20 @@ public class BoundingBox extends DynamicGameItem {
     }
 
     @Override
-    protected BoundingBox getBoundingBox() {
+    public BoundingBox getBoundingBox() {
         return this;
     }
+
+    @Override
+    public boolean isSelected() {
+        return selected;
+    }
+
+    @Override
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+    }
+
 
     @Override
     public void setScale(float scale) {

@@ -13,6 +13,7 @@ public abstract class GameItem {
 
     protected Vector3f rotation;
 
+    protected boolean selected;
 
     public GameItem(Mesh mesh) {
         this.mesh = mesh;
@@ -36,5 +37,11 @@ public abstract class GameItem {
 
     public abstract void setPosition(float x, float y, float z);
 
-    protected abstract BoundingBox getBoundingBox();
+    public abstract BoundingBox getBoundingBox();
+
+    public abstract boolean isSelected();
+
+    public abstract  void setSelected(boolean selected);
+
+
 }

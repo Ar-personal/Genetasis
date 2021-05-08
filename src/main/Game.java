@@ -33,6 +33,8 @@ public class Game implements IGameLogic {
     private final Camera camera;
     private Hud hud;
     private Terrain terrain;
+//    private CameraBoxSelectionDetector selectDetector;
+    private MouseBoxSelectionDetector selectDetector;
 
 
     private Vector3f ambientLight;
@@ -58,12 +60,7 @@ public class Game implements IGameLogic {
     private Bush bush1, bush2, bush3, bush4, bush5, bush6;
     private Grass grass;
 
-    private Deer deer;
-
-    private List<GameItem> gameItems;
-
-
-    public Game() {
+    public Game() throws Exception {
         renderer = new Renderer();
         camera = new Camera();
         camera.setPosition(0, 0.5f, 0);
@@ -75,7 +72,7 @@ public class Game implements IGameLogic {
     @Override
     public void init(Window window) throws Exception {
         renderer.init(window);
-
+        selectDetector = new MouseBoxSelectionDetector();
 
 
         //create and load the terrain
@@ -86,7 +83,7 @@ public class Game implements IGameLogic {
         int textInc = 40;
 //        terrain = new Terrain(terrainSize, terrainScale, minY, maxY, "C:\\Users\\Alex\\Dropbox\\Game Design\\Genetasis\\resources\\textures\\heightmap.png", null, textInc);
         terrain = new Terrain(terrainSize, terrainScale, minY, maxY, textInc);
-        scene = new Scene(this, terrain);
+        scene = new Scene(this, terrain, window);
         StaticGameItem[] items = terrain.getGameItems();
 
         for(int i = 0; i < items.length; i++) {
@@ -127,6 +124,7 @@ public class Game implements IGameLogic {
             grass = new Grass(grassMesh, randomSpawn());
             grass.setScale(0.1f);
             scene.addStaticGameItem(grass);
+            scene.addGrassItem(grass);
 //            scene.addBoundingBox(grass.getBoundingBox());
         }
 //        bush4 = new StaticGameItem(bush4Mesh);
@@ -143,7 +141,6 @@ public class Game implements IGameLogic {
 
 
 
-
 ;
 
 //        scene.addStaticGameItem(bush4);
@@ -156,10 +153,6 @@ public class Game implements IGameLogic {
 
         camera.getPosition().z = 2;
         camera.getPosition().y = 1;
-
-        gameItems = scene.getGameItems();
-
-        hud = new Hud("Light Angle:");
     }
 
     private void setupLights() {
@@ -223,7 +216,7 @@ public class Game implements IGameLogic {
 
 
     @Override
-    public void update(float interval, MouseInput mouseInput) {
+    public void update(float interval, MouseInput mouseInput, Window window) {
         scene.update();
 
         // Update camera based on mouse
@@ -237,19 +230,7 @@ public class Game implements IGameLogic {
         camera.movePosition(cameraInc.x * CAMERA_POS_STEP, cameraInc.y * CAMERA_POS_STEP, cameraInc.z * CAMERA_POS_STEP);
         // Check if there has been a collision. If true, set the y position to
         // the maximum height
-        float height = terrain != null ? terrain.getHeight(camera.getPosition()) : -Float.MAX_VALUE;
-        float height1 = terrain != null ? terrain.getHeight(cubeStaticGameItem.getPosition()) : -Float.MAX_VALUE;
-        if (camera.getPosition().y <= height) {
-            camera.setPosition(prevPos.x, prevPos.y, prevPos.z);
-        }
 
-        Vector3f prev = new Vector3f(cubeStaticGameItem.getPosition());
-        if(cubeStaticGameItem.getPosition().y > height1){
-            cubeStaticGameItem.getPosition().y -= 0.001f;
-        }
-        if (cubeStaticGameItem.getPosition().y <= height1) {
-            cubeStaticGameItem.setPosition(prev.x, prev.y, prev.z);
-        }
 
         float rotY = cubeStaticGameItem.getRotation().y;
         rotY += 0.5f;
@@ -272,14 +253,19 @@ public class Game implements IGameLogic {
         lightDirection.z = zValue;
         lightDirection.normalize();
         float lightAngle = (float)Math.toDegrees(Math.acos(lightDirection.z));
-        hud.setStatusText("LightAngle: " + lightAngle);
+
+
+        camera.updateViewMatrix();
+        if (mouseInput.isLeftButtonPressed()) {
+            this.selectDetector.selectGameItem(scene.getGameItems(), window, mouseInput.getCurrentPos(), camera);
+        }
     }
 
     public void render(Window window) {
-        if (hud != null) {
-            hud.updateSize(window);
+        renderer.render(window, camera, scene);
+        if(scene.isEntitySelected()) {
+            scene.getEntityHud().render();
         }
-        renderer.render(window, camera, scene, hud);
     }
 
     @Override

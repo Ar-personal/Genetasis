@@ -174,7 +174,7 @@ public class OBJLoader {
         }
 
 
-        Mesh mesh = new Mesh(posArr, textCoordArr, cols, normArr, indicesArr, wireFrame);
+        Mesh mesh = new Mesh(posArr, textCoordArr, cols, normArr, indicesArr);
         return mesh;
     }
 

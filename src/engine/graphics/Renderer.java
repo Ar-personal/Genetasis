@@ -83,6 +83,7 @@ public class Renderer {
         sceneShaderProgram.createUniform("shadowMap");
         sceneShaderProgram.createUniform("orthoProjectionMatrix");
         sceneShaderProgram.createUniform("modelLightViewMatrix");
+        sceneShaderProgram.createUniform("selected");
 
     }
 
@@ -121,11 +122,11 @@ public class Renderer {
     }
 
     public void clear() {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     }
 
     public void render(Window window, Camera camera,
-                       Scene scene, IHud hud) {
+                       Scene scene) {
 
         clear();
 
@@ -133,12 +134,13 @@ public class Renderer {
 
         glViewport(0, 0, window.getWidth(), window.getHeight());
 
-        transformation.updateProjectionMatrix(FOV, window.getWidth(), window.getHeight(), Z_NEAR, Z_FAR);
+//        window.updateProjectionMatrix();
+
+        window.updateProjectionMatrix();
         transformation.updateViewMatrix(camera);
 
         renderScene(window, camera, scene);
 
-        renderHud(window, hud);
 
 //        renderSkyBox(window, camera, scene);
     }
@@ -146,7 +148,7 @@ public class Renderer {
     public void renderScene(Window window, Camera camera, Scene scene) {
         sceneShaderProgram.bind();
 
-        Matrix4f projectionMatrix = transformation.getProjectionMatrix();
+        Matrix4f projectionMatrix = window.getProjectionMatrix();
         sceneShaderProgram.setUniform("projectionMatrix", projectionMatrix);
         Matrix4f orthoProjMatrix = transformation.getOrthoProjectionMatrix();
         sceneShaderProgram.setUniform("orthoProjectionMatrix", orthoProjMatrix);
@@ -172,6 +174,7 @@ public class Renderer {
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, shadowMap.getDepthMapTexture().getId());
             mesh.renderList(mapMeshes.get(mesh), (GameItem gameItem) -> {
+                        sceneShaderProgram.setUniform("selected", gameItem.isSelected() ? 1.0f : 0.0f);
                         Matrix4f modelViewMatrix = transformation.buildModelViewMatrix(gameItem, viewMatrix);
                         sceneShaderProgram.setUniform("modelViewMatrix", modelViewMatrix);
                         Matrix4f modelLightViewMatrix = transformation.buildModelLightViewMatrix(gameItem, lightViewMatrix);
@@ -250,24 +253,6 @@ public class Renderer {
         sceneShaderProgram.setUniform("directionalLight", currDirLight);
     }
 
-    private void renderHud(Window window, IHud hud) {
-        hudShaderProgram.bind();
-
-        Matrix4f ortho = transformation.getOrtho2DProjectionMatrix(0, window.getWidth(), window.getHeight(), 0);
-        for (GameItem staticGameItem : hud.getGameItems()) {
-            Mesh mesh = staticGameItem.getMesh();
-            // Set ortohtaphic and model matrix for this HUD item
-            Matrix4f projModelMatrix = transformation.buildOrthoProjModelMatrix(staticGameItem, ortho);
-            hudShaderProgram.setUniform("projModelMatrix", projModelMatrix);
-            hudShaderProgram.setUniform("colour", staticGameItem.getMesh().getMaterial().getAmbientColour());
-            hudShaderProgram.setUniform("hasTexture", staticGameItem.getMesh().getMaterial().isTextured() ? 1 : 0);
-
-            // Render the mesh for this HUD item
-            mesh.render();
-        }
-
-        hudShaderProgram.unbind();
-    }
 
     private void renderSkyBox(Window window, Camera camera, Scene scene) {
         skyBoxShaderProgram.bind();
@@ -275,7 +260,7 @@ public class Renderer {
         skyBoxShaderProgram.setUniform("texture_sampler", 0);
 
         // Update projection Matrix
-        Matrix4f projectionMatrix = transformation.getProjectionMatrix();
+        Matrix4f projectionMatrix = window.getProjectionMatrix();
         skyBoxShaderProgram.setUniform("projectionMatrix", projectionMatrix);
         SkyBox skyBox = scene.getSkyBox();
         Matrix4f viewMatrix = transformation.getViewMatrix();

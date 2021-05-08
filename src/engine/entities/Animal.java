@@ -12,7 +12,6 @@ public abstract class Animal extends DynamicGameItem {
 
     public abstract void update();
 
-    protected abstract void move();
 
 
 }

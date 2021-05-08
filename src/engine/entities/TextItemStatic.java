@@ -82,7 +82,7 @@ public class TextItemStatic extends HudItem {
         float[] posArr = Utils.listToArray(positions);
         float[] textCoordsArr = Utils.listToArray(textCoords);
         int[] indicesArr = indices.stream().mapToInt(i->i).toArray();
-        Mesh mesh = new Mesh(posArr, textCoordsArr, null, normals, indicesArr, false);
+        Mesh mesh = new Mesh(posArr, textCoordsArr, null, normals, indicesArr);
         mesh.setMaterial(new Material(fontTexture.getTexture()));
         return mesh;
     }

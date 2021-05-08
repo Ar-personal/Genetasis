@@ -9,7 +9,7 @@ public class Grass extends Plant {
     private Vector3f position;
     private Vector3f rotation = new Vector3f();
 
-    private float foodValue = 25f;
+    private float foodValue = 15f;
 
 
     private BoundingBox boundingBox;
@@ -69,7 +69,7 @@ public class Grass extends Plant {
         };
 
 
-        boundingMesh = new Mesh(positions, null, colours, null, indices,  false);
+        boundingMesh = new Mesh(positions, null, colours, null, indices);
         boundingBox = new BoundingBox(boundingMesh, new Vector3f(position.x, position.y, position.z));
         boundingBox.setScale(0.1f);
     }
@@ -112,7 +112,6 @@ public class Grass extends Plant {
 
     @Override
     public void update() {
-
     }
 
     @Override
@@ -138,6 +137,16 @@ public class Grass extends Plant {
 
     public BoundingBox getBoundingBox() {
         return boundingBox;
+    }
+
+    @Override
+    public boolean isSelected() {
+        return selected;
+    }
+
+    @Override
+    public void setSelected(boolean selected) {
+        this.selected = selected;
     }
 
     public void setBoundingBox(BoundingBox boundingBox) {

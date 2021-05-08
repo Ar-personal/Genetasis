@@ -79,14 +79,11 @@ public class Transformation {
         return updateGenericViewMatrix(position, rotation, lightViewMatrix);
     }
 
-    private Matrix4f updateGenericViewMatrix(Vector3f position, Vector3f rotation, Matrix4f matrix) {
-        matrix.identity();
+    public static  Matrix4f updateGenericViewMatrix(Vector3f position, Vector3f rotation, Matrix4f matrix) {
         // First do the rotation so camera rotates over its position
-        matrix.rotate((float)Math.toRadians(rotation.x), new Vector3f(1, 0, 0))
-                .rotate((float)Math.toRadians(rotation.y), new Vector3f(0, 1, 0));
-        // Then do the translation
-        matrix.translate(-position.x, -position.y, -position.z);
-        return matrix;
+        return matrix.rotationX((float)Math.toRadians(rotation.x))
+                .rotateY((float)Math.toRadians(rotation.y))
+                .translate(-position.x, -position.y, -position.z);
     }
 
     public final Matrix4f getOrtho2DProjectionMatrix(float left, float right, float bottom, float top) {
@@ -128,4 +125,6 @@ public class Transformation {
         orthoModelMatrix.mul(modelMatrix);
         return orthoModelMatrix;
     }
+
+
 }

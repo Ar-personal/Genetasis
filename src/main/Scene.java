@@ -4,6 +4,7 @@ import engine.entities.*;
 import engine.graphics.Fog;
 import engine.graphics.Mesh;
 import engine.graphics.SceneLight;
+import engine.graphics.Window;
 import engine.objects.SkyBox;
 import engine.objects.Terrain;
 import engine.utils.OBJLoader;
@@ -16,10 +17,14 @@ public class Scene {
     private Map<Mesh, List<GameItem>> meshMap;
 //    private Map<Mesh, List<GameItem>> boundingMap;
     private List<GameItem> gameItems = new ArrayList<>();
-    private List<GameItem> removedItems;
+    private List<GameItem> removedItems = new ArrayList<>();
     private List<Deer> deers = new ArrayList<>();
+    private List<Grass> grassList = new ArrayList<>();
+
+    private EntityHud entityHud;
 
     private Game game;
+    private Window window;
     private SkyBox skyBox;
     private Terrain terrain;
     private SceneLight sceneLight;
@@ -27,11 +32,16 @@ public class Scene {
     private Fog fog;
 
     private int numGameItems;
+    private boolean entitySelected = false;
 
-    public Scene(Game game, Terrain terrain) {
+    public Scene(Game game, Terrain terrain, Window window) throws Exception {
         this.game = game;
-        meshMap = new HashMap();
         this.terrain = terrain;
+        this.window = window;
+        meshMap = new HashMap();
+        entityHud = new EntityHud();
+        entityHud.init(window);
+
 //        boundingMap = new HashMap<>();
         fog = Fog.NOFOG;
     }
@@ -91,33 +101,34 @@ public class Scene {
 
     public void update(){
         if(gameItems != null) {
+            entitySelected = false;
             for (GameItem gameItem : gameItems) {
+                //while looping through entities check if any are selected, if not then don't render any hud's for entities
+                if(gameItem.isSelected()){
+                    entitySelected = true;
+                }
                 gameItem.update();
 
                 if(gameItem instanceof Deer){
-                    List<Grass> grasses = new ArrayList<>();
-                    for (GameItem g : gameItems) {
-                        if(g instanceof Grass){
-                            grasses.add((Grass) g);
-                        }
-                    }
-                    for(Deer d : deers) {
-                        for (Grass gr : grasses) {
-                            if (d.boxIntersection(d.getAwarenessBox(), gr.getBoundingBox())) {
-                                d.addIntersectingPlantObject(gr);
-                            } else {
-                                if (d.getIntersectingObjects() != null) {
-                                    if (d.getIntersectingObjects().contains(gr)) {
-                                        d.removeIntersectingObject(gr);
-                                    }
+                    for (Grass gr : grassList) {
+                        if (((Deer) gameItem).boxIntersection(((Deer) gameItem).getAwarenessBox(), gr.getBoundingBox())) {
+                                if (!((Deer) gameItem).getIntersectingObjects().contains(gr)) {
+                                    ((Deer) gameItem).addIntersectingPlantObject(gr);
+                                }
+                        } else {
+                            if (((Deer) gameItem).getIntersectingObjects() != null) {
+                                if (((Deer) gameItem).getIntersectingObjects().contains(gr)) {
+                                    ((Deer) gameItem).removeIntersectingObject(gr);
                                 }
                             }
                         }
                     }
                 }
+
             }
             if(removedItems !=null) {
                 gameItems.removeAll(removedItems);
+                removedItems = new ArrayList<>();
             }
         }
     }
@@ -137,16 +148,18 @@ public class Scene {
             float maxHunger = (random.nextFloat() * (200f - 100f) + 100f);
             Mesh deerMesh = new OBJLoader().loadMesh("/models/Deer.obj", new Vector3f(60, 15, 30), false);
             deer = new Deer(game.getScene(), deerMesh, randomSpawn(), 3f, maxHunger, 0, 0.01f, 10, 10, 50, 0.001f);
+            deer.setHud(entityHud);
             deer.setTerrain(terrain);
             deer.setScale(0.001f);
             deer.setRotation(0, 180f, 0);
             deer.getBoundingBox().setRotation(0, 180f, 0);
             deer.getAwarenessBox().setRotation(0, 180f, 0);
             deers.add(deer);
+
             addDynamicGameItem(deer);
 //            addBoundingBox(deer.getBoundingBox());
 //            addBoundingBox(deer.getAwarenessBox());
-//            addBoundingBox(deer.getDestinationPoint());
+            addBoundingBox(deer.getDestinationPoint());
 
         }
     }
@@ -188,11 +201,14 @@ public class Scene {
         if(meshMap.get(gameItem.getMesh()) != null) {
             meshMap.get(gameItem.getMesh()).remove(gameItem);
         }
-        removedItems = new ArrayList<>();
         removedItems.add(gameItem);
 
         if(gameItem instanceof Deer){
-            deers.remove(deers);
+            deers.remove(gameItem);
+        }
+
+        if(gameItem instanceof Grass){
+            grassList.remove(gameItem);
         }
     }
 
@@ -216,5 +232,39 @@ public class Scene {
 
     public List<GameItem> getRemovedItems() {
         return removedItems;
+    }
+
+    public EntityHud getEntityHud() {
+        return entityHud;
+    }
+
+    public void setEntityHud(EntityHud entityHud) {
+        this.entityHud = entityHud;
+    }
+
+    public boolean isEntitySelected() {
+        return entitySelected;
+    }
+
+    public void setEntitySelected(boolean entitySelected) {
+        this.entitySelected = entitySelected;
+    }
+
+    public List<Grass> getGrassList() {
+        return grassList;
+    }
+
+    public void addGrassItem(Grass g){
+        grassList.add(g);
+    }
+
+    public void removeGrassItem(Grass g){
+        grassList.remove(g);
+    }
+
+
+
+    public void setGrassList(List<Grass> grassList) {
+        this.grassList = grassList;
     }
 }

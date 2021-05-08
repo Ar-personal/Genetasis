@@ -7,6 +7,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -17,9 +18,11 @@ import static org.lwjgl.opengl.GL30.*;
 
 public class Mesh {
 
-    private final int vaoId;
+    public static final int MAX_WEIGHTS = 4;
 
-    private final List<Integer> vboIdList;
+    protected final int vaoId;
+
+    protected final List<Integer> vboIdList;
 
     private int colourVboId;
 
@@ -31,7 +34,11 @@ public class Mesh {
 
     private float width, height, length, minX, minY, minZ, maxX, maxY, maxZ;
 
-    public Mesh(float[] positions, float[] textCoords, float[] colours, float[] normals, int[] indices, boolean wireFrame) {
+    public Mesh(float[] positions, float[] textCoords, float[] colours, float[] normals, int[] indices) {
+        this(positions, textCoords, colours, normals, indices, Mesh.createEmptyIntArray(Mesh.MAX_WEIGHTS * positions.length / 3, 0), Mesh.createEmptyFloatArray(Mesh.MAX_WEIGHTS * positions.length / 3, 0));
+    }
+
+    public Mesh(float[] positions, float[] textCoords, float[] colours, float[] normals, int[] indices, int[] jointIndices, float[] weights) {
         FloatBuffer posBuffer = null;
         FloatBuffer textCoordsBuffer = null;
         FloatBuffer colourBuffer = null;
@@ -52,13 +59,7 @@ public class Mesh {
             glBindBuffer(GL_ARRAY_BUFFER, vboId);
             glBufferData(GL_ARRAY_BUFFER, posBuffer, GL_STATIC_DRAW);
             glEnableVertexAttribArray(0);
-//            if(wireFrame) {
-//                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-//            }
-//
-//            if(!wireFrame){
-//                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-//            }
+
             glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
 
 
@@ -129,7 +130,7 @@ public class Mesh {
                 MemoryUtil.memFree(indicesBuffer);
             }
             if (colourBuffer != null) {
-                MemoryUtil.memFree(indicesBuffer);
+                MemoryUtil.memFree(colourBuffer);
             }
         }
 
@@ -183,7 +184,7 @@ public class Mesh {
         return vertexCount;
     }
 
-    private void initRender() {
+    protected void initRender() {
         if(material != null) {
             texture = material.getTexture();
         }
@@ -198,18 +199,18 @@ public class Mesh {
         glBindVertexArray(getVaoId());
     }
 
-    private void endRender() {
+    protected void endRender() {
         // Restore state
         glBindVertexArray(0);
 
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    public void render() {
+    protected void render() {
         initRender();
 
         glDrawElements(GL_TRIANGLES, getVertexCount(), GL_UNSIGNED_INT, 0);
-//        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
         endRender();
     }
@@ -259,6 +260,18 @@ public class Mesh {
         // Delete the VAO
         glBindVertexArray(0);
         glDeleteVertexArrays(vaoId);
+    }
+
+    protected static float[] createEmptyFloatArray(int length, float defaultValue) {
+        float[] result = new float[length];
+        Arrays.fill(result, defaultValue);
+        return result;
+    }
+
+    protected static int[] createEmptyIntArray(int length, int defaultValue) {
+        int[] result = new int[length];
+        Arrays.fill(result, defaultValue);
+        return result;
     }
 
     public float getWidth() {

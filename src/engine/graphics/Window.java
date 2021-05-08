@@ -1,5 +1,6 @@
 package engine.graphics;
 
+import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
@@ -10,6 +11,12 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 
 public class Window {
+
+    private static final float FOV = (float) Math.toRadians(60.0f);
+
+    private static final float Z_NEAR = 0.01f;
+
+    private static final float Z_FAR = 1000.f;
 
     private final String title;
 
@@ -23,12 +30,18 @@ public class Window {
 
     private boolean vSync;
 
-    public Window(String title, int width, int height, boolean vSync) {
+    private Matrix4f projectionMatrix;
+
+    private WindowOptions opts;
+
+    public Window(String title, int width, int height, boolean vSync, WindowOptions opts) {
         this.title = title;
         this.width = width;
         this.height = height;
         this.vSync = vSync;
         this.resized = false;
+        this.opts = opts;
+        projectionMatrix = new Matrix4f();
     }
 
     public void init() {
@@ -46,8 +59,22 @@ public class Window {
         glfwWindowHint(GLFW_RESIZABLE, GL_TRUE); // the window will be resizable
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        if (opts.compatibleProfile) {
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+        } else {
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        }
+
+        boolean maximized = false;
+        // If no size has been specified set it to maximized state
+        if (width == 0 || height == 0) {
+            // Set up a fixed width and height so window initialization does not fail
+            width = 100;
+            height = 100;
+            glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+            maximized = true;
+        }
 
         // Create the window
         windowHandle = glfwCreateWindow(width, height, title, NULL, NULL);
@@ -69,14 +96,18 @@ public class Window {
             }
         });
 
-        // Get the resolution of the primary monitor
-        GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        // Center our window
-        glfwSetWindowPos(
-                windowHandle,
-                (vidmode.width() - width) / 2,
-                (vidmode.height() - height) / 2
-        );
+        if (maximized) {
+            glfwMaximizeWindow(windowHandle);
+        } else {
+            // Get the resolution of the primary monitor
+            GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+            // Center our window
+            glfwSetWindowPos(
+                    windowHandle,
+                    (vidmode.width() - width) / 2,
+                    (vidmode.height() - height) / 2
+            );
+        };
 
         // Make the OpenGL context current
         glfwMakeContextCurrent(windowHandle);
@@ -94,16 +125,38 @@ public class Window {
         // Set the clear color
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_STENCIL_TEST);
+
+        if (opts.showTriangles) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        }
+
 
         //transparencies
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+        if (opts.cullFace) {
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+        }
+
         GL11.glEnable(GL11.GL_TEXTURE_2D);
 
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
+        if (opts.antialiasing) {
+            glfwWindowHint(GLFW_SAMPLES, 4);
+        }
 
+    }
+
+    public void restoreState() {
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_STENCIL_TEST);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        if (opts.cullFace) {
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+        }
     }
 
     public void setClearColor(float r, float g, float b, float alpha) {
@@ -154,4 +207,35 @@ public class Window {
     public long getWindowHandle() {
         return windowHandle;
     }
+
+    public Matrix4f getProjectionMatrix() {
+        return projectionMatrix;
+    }
+
+    public Matrix4f updateProjectionMatrix() {
+        float aspectRatio = (float)width / (float)height;
+        return projectionMatrix.setPerspective(FOV, aspectRatio, Z_NEAR, Z_FAR);
+    }
+
+    public WindowOptions getOpts() {
+        return opts;
+    }
+
+    public void setOpts(WindowOptions opts) {
+        this.opts = opts;
+    }
+
+    public static class WindowOptions {
+
+        public boolean cullFace;
+
+        public boolean showTriangles;
+
+        public boolean showFps;
+
+        public boolean compatibleProfile;
+
+        public boolean antialiasing;
+    }
+
 }

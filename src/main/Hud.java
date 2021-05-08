@@ -10,57 +10,148 @@ import engine.utils.FontTexture;
 import engine.utils.IHud;
 import engine.utils.OBJLoader;
 import engine.entities.TextItemStatic;
+import engine.utils.Utils;
 import org.joml.Vector4f;
+import org.lwjgl.nanovg.NVGColor;
+import org.lwjgl.system.MemoryUtil;
 
 import java.awt.*;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
-public class Hud implements IHud{
+import static java.sql.Types.NULL;
+import static org.lwjgl.glfw.GLFW.glfwGetCursorPos;
+import static org.lwjgl.nanovg.NanoVG.*;
+import static org.lwjgl.nanovg.NanoVGGL2.*;
 
-    private static final Font FONT = new Font("Arial", Font.PLAIN, 20);
+public class Hud {
 
-    private static final String CHARSET = "ISO-8859-1";
+    protected static final String FONT_NAME = "BOLD";
 
-    private final GameItem[] hudItems;
+    protected long vg;
 
-    private final TextItemStatic statusTextItem;
+    protected NVGColor colour;
 
-    private final GameItem compassItem;
+    protected ByteBuffer fontBuffer;
 
-    public Hud(String statusText) throws Exception {
-        FontTexture fontTexture = new FontTexture(FONT, CHARSET);
-        this.statusTextItem = new TextItemStatic(statusText, fontTexture);
-//        this.statusTextItem.getMesh().getMaterial().setAmbientColour(new Vector4f(1, 1, 1, 1));
+    protected final DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
 
-        // Create compass
-        Mesh mesh = new OBJLoader().loadMesh("/models/compass.obj", null, false);
-        Material material = new Material();
-        material.setAmbientColour(new Vector4f(1, 0, 0, 1));
-        mesh.setMaterial(material);
-        compassItem = new HudItem(mesh) {
-        };
-        compassItem.setScale(40.0f);
-        // Rotate to transform it to screen coordinates
-        compassItem.setRotation(0f, 0f, 180f);
+    protected DoubleBuffer posx;
 
-        // Create list that holds the items that compose the HUD
-        hudItems = new GameItem[]{statusTextItem, compassItem};
+    protected DoubleBuffer posy;
+
+    protected int counter;
+
+    protected List<EntityHud> entityHuds = new ArrayList<>();
+
+    protected Window window;
+
+    public void init(Window window) throws Exception {
+        this.window = window;
+        this.vg = window.getOpts().antialiasing ? nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES) : nvgCreate(NVG_STENCIL_STROKES);
+        if (this.vg == NULL) {
+            throw new Exception("Could not init nanovg");
+        }
+
+        fontBuffer = Utils.ioResourceToByteBuffer("C:\\Users\\Alex\\Dropbox\\Game Design\\Genetasis\\resources\\fonts\\OpenSans-Bold.ttf", 150 * 1024);
+        int font = nvgCreateFontMem(vg, FONT_NAME, fontBuffer, 0);
+        if (font == -1) {
+            throw new Exception("Could not add font");
+        }
+        colour = NVGColor.create();
+
+        posx = MemoryUtil.memAllocDouble(1);
+        posy = MemoryUtil.memAllocDouble(1);
+
+        counter = 0;
     }
 
-    public void setStatusText(String statusText) {
-        this.statusTextItem.setText(statusText);
+    public void render(Window window) {
+        this.window = window;
+        nvgBeginFrame(vg, window.getWidth(), window.getHeight(), 1);
+
+
+        // Upper ribbon
+        nvgBeginPath(vg);
+        nvgRect(vg, 0, window.getHeight() - 100, window.getWidth(), 50);
+        nvgFillColor(vg, rgba(0x23, 0xa1, 0xf1, 200, colour));
+        nvgFill(vg);
+
+        // Lower ribbon
+        nvgBeginPath(vg);
+        nvgRect(vg, 0, window.getHeight() - 50, window.getWidth(), 10);
+        nvgFillColor(vg, rgba(0xc1, 0xe3, 0xf9, 200, colour));
+        nvgFill(vg);
+
+        glfwGetCursorPos(window.getWindowHandle(), posx, posy);
+        int xcenter = 50;
+        int ycenter = window.getHeight() - 75;
+        int radius = 20;
+        int x = (int) posx.get(0);
+        int y = (int) posy.get(0);
+        boolean hover = Math.pow(x - xcenter, 2) + Math.pow(y - ycenter, 2) < Math.pow(radius, 2);
+
+        // Circle
+        nvgBeginPath(vg);
+        nvgCircle(vg, xcenter, ycenter, radius);
+        nvgFillColor(vg, rgba(0xc1, 0xe3, 0xf9, 200, colour));
+        nvgFill(vg);
+
+        // Clicks Text
+        nvgFontSize(vg, 25.0f);
+        nvgFontFace(vg, FONT_NAME);
+        nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
+        if (hover) {
+            nvgFillColor(vg, rgba(0x00, 0x00, 0x00, 255, colour));
+        } else {
+            nvgFillColor(vg, rgba(0x23, 0xa1, 0xf1, 255, colour));
+
+        }
+        nvgText(vg, 50, window.getHeight() - 87, String.format("%02d", counter));
+
+        // Render hour text
+        nvgFontSize(vg, 40.0f);
+        nvgFontFace(vg, FONT_NAME);
+        nvgTextAlign(vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
+        nvgFillColor(vg, rgba(0xe6, 0xea, 0xed, 255, colour));
+        nvgText(vg, window.getWidth() - 150, window.getHeight() - 95, dateFormat.format(new Date()));
+
+        nvgEndFrame(vg);
+
+        // Restore state
+        window.restoreState();
     }
 
-    public void rotateCompass(float angle) {
-        this.compassItem.setRotation(0, 0, 180 + angle);
+    public void incCounter() {
+        counter++;
+        if (counter > 99) {
+            counter = 0;
+        }
     }
 
-    @Override
-    public GameItem[] getGameItems() {
-        return hudItems;
+    private NVGColor rgba(int r, int g, int b, int a, NVGColor colour) {
+        colour.r(r / 255.0f);
+        colour.g(g / 255.0f);
+        colour.b(b / 255.0f);
+        colour.a(a / 255.0f);
+
+        return colour;
     }
 
-    public void updateSize(Window window) {
-        this.statusTextItem.setPosition(10f, window.getHeight() - 50f, 0);
-        this.compassItem.setPosition(window.getWidth() - 40f, 50f, 0);
+    public void cleanup() {
+        nvgDelete(vg);
+        if (posx != null) {
+            MemoryUtil.memFree(posx);
+        }
+        if (posy != null) {
+            MemoryUtil.memFree(posy);
+        }
     }
+
+
 }

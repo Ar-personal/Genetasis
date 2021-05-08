@@ -3,6 +3,7 @@ package engine.entities;
 import engine.graphics.Mesh;
 import engine.objects.Terrain;
 import main.Box3D;
+import main.EntityHud;
 import main.Scene;
 import org.joml.Random;
 import org.joml.Vector3f;
@@ -17,6 +18,7 @@ public class Deer extends Animal {
 
     protected Scene scene;
     protected Mesh mesh;
+    protected EntityHud hud;
     protected Vector3f position, destination, moveVector = new Vector3f();;
     protected Vector3f rotation = new Vector3f();
     protected Plant objectTarget;
@@ -31,7 +33,7 @@ public class Deer extends Animal {
     protected int stamina;
     protected int energy;
     protected float[] awarenessCubePositions;
-    protected boolean wandering = false, goingToFood = false, idle = false;
+    protected boolean wandering = false, idle, reachedIdleDestination = false;
     protected long startTime, elapsedTime, elapsedSeconds;
 
 
@@ -42,7 +44,7 @@ public class Deer extends Animal {
     protected Mesh boundingMesh, awarenessMesh, destinationPointMesh;
     protected BoundingBox boundingBox, awarenessBox, destinationPoint;
     protected Terrain terrain;
-    protected List<Plant> intersectingPlantObjects = null;
+    protected List<Plant> intersectingPlantObjects = new ArrayList<>();
 
     public Deer(Scene scene, Mesh mesh, Vector3f position, float awareness, float maxHunger, int thirst, float speed, int health, int stamina, int energy, float size) {
         super(mesh);
@@ -59,9 +61,7 @@ public class Deer extends Animal {
         this.size = size;
 
         init();
-        elapsedTime = System.currentTimeMillis() - startTime;
-        elapsedSeconds = elapsedTime / 1000;
-        walkToPoint();
+        destination = null;
     }
 
     public void init(){
@@ -135,19 +135,19 @@ public class Deer extends Animal {
 
         height = mesh.getHeight();
 
-        boundingMesh = new Mesh(positions, null, colours, null, indices,  false);
+        boundingMesh = new Mesh(positions, null, colours, null, indices);
         boundingBox = new BoundingBox(boundingMesh, new Vector3f(position.x, position.y, position.z));
         boundingBox.setScale(size);
 
 
-        awarenessMesh = new Mesh(awarenessCubePositions, null, colours, null, indices, false);
+        awarenessMesh = new Mesh(awarenessCubePositions, null, colours, null, indices);
         awarenessBox = new BoundingBox(awarenessMesh, new Vector3f(position.x, position.y, position.z));
 
         //todo figure out how to scale the mesh to the same size as true box size
         awarenessBox.setScale(awareness);
 
 
-        destinationPointMesh = new Mesh(awarenessCubePositions, null, colours, null, indices, false);
+        destinationPointMesh = new Mesh(awarenessCubePositions, null, colours, null, indices);
         destinationPoint = new BoundingBox(destinationPointMesh, new Vector3f(position.x, position.y, position.z));
         destinationPoint.setScale(0.1f);
 
@@ -157,10 +157,15 @@ public class Deer extends Animal {
 
     @Override
     public void update() {
-        //deer gets hungry
+        boundingBox.setPosition(position.x, position.y, position.z);
+        awarenessBox.setPosition(position.x, position.y, position.z);
 
         calculateStats();
 
+        elapsedTime = System.currentTimeMillis() - startTime;
+        elapsedSeconds = elapsedTime / 1000;
+
+        //make sure deer doesn't go below the terrain and regularly jumps
         if(position.y > terrain.getHeight(position) && position.y - 0.005 > terrain.getHeight(position)){
             position.y -= 0.005f;
         }else{
@@ -168,58 +173,58 @@ public class Deer extends Animal {
             jump();
         }
 
-        boundingBox.setPosition(position.x, position.y, position.z);
-        awarenessBox.setPosition(position.x, position.y, position.z);
-
-        elapsedTime = System.currentTimeMillis() - startTime;
-        elapsedSeconds = elapsedTime / 1000;
-
-//        System.out.println("elapsed seconds : " + elapsedSeconds);
-        if(canEat() && idle){
-            System.out.println("walking to food");
-            destination.x = objectTarget.getPosition().x;
-            destination.y = objectTarget.getPosition().y;
-            destination.z = objectTarget.getPosition().z;
-            idle = false;
+        //update hud to display specific stats of this deer entity
+        if(isSelected() || boundingBox.isSelected() || awarenessBox.selected){
+            hud.setAwareness(awareness);
+            hud.setEnergy(energy);
+            hud.setHealth(health);
+            hud.setHunger(hunger);
+            hud.setMaxHunger(maxHunger);
+            hud.setSize(size);
+            hud.setStamina(stamina);
+            hud.setThirst(thirst);
+            hud.setSpeed(speed);
+            hud.setEnergy(energy);
         }
 
-        Random random = new Random();
-        int r = random.nextInt(6);
-        if (!canEat() && idle && elapsedSeconds > r) {
-            System.out.println("calculating new destination");
-            walkToPoint();
+        if(destination == null && elapsedSeconds > 3){
+            canEat();
         }
-
-        destinationPoint.setPosition(destination.x, position.y, destination.z);
-        if(destination != null && elapsedSeconds > r) {
-            moveToDestination();
+        
+        if(destination == null && elapsedSeconds > 3){
+            findRandomDesto();
         }
 
 
-        //check for intersections with food only when the deer isn't idle, may need to specify idle to if deer is eating or doing another activity
-        if(objectTarget != null && !idle) {
+        if(objectTarget != null) {
             if (boxIntersection(boundingBox, objectTarget.getBoundingBox())) {
-                System.out.println("collide");
+                hunger += objectTarget.getFoodValue();
                 scene.removeItem(objectTarget);
                 scene.removeItem(objectTarget.getBoundingBox());
                 intersectingPlantObjects.remove(objectTarget);
-                hunger += objectTarget.getFoodValue();
+                objectTarget = null;
                 if(hunger > maxHunger){
                     hunger = maxHunger;
                 }
             }
         }
 
-    }
+        if(destination != null) {
+            if (terrain != null) {
+                destinationPoint.setPosition(destination.x, terrain.getHeight(new Vector3f(destination.x, position.y, destination.z)), destination.z);
 
-    public void calculateStats(){
-        hunger -= 0.001f;
-        if(hunger <= 0){
-            scene.removeItem(this);
-            scene.removeItem(this.boundingBox);
-            scene.removeItem(this.awarenessBox);
+            } else {
+                destinationPoint.setPosition(destination.x, position.y, destination.z);
+            }
+        }
+
+        //checking if the deer can eat must come after the target being set to null
+
+        if(destination != null) {
+            moveToDestination();
         }
     }
+
 
     public void moveToDestination(){
         //get unit vector of the destination
@@ -227,7 +232,6 @@ public class Deer extends Animal {
         moveVector.y = 0;
         moveVector.z = destination.z - position.z;
         moveVector.normalize();
-
 //            rotation = new Vector3f(0,  90f, 0);
 //            Vector3f p = new Vector3f(position);
 //            Vector3f dd = new Vector3f(destination);
@@ -257,35 +261,21 @@ public class Deer extends Animal {
 
         //check if the deer is within a certain threshold in range of the target, speed may be a good step
         //check for collission
-        if (destination.x - position.x > speed || destination.z - position.z > speed) {
-            position.x += (moveVector.x * speed);
-            position.z += (moveVector.z * speed);
-        }
-
-//            if (destination.z - position.z > 0.01f) {
-//                position.z += (moveVector.z * speed);
-//                System.out.println("moving z axis");
-//            }
-
-        //if deer box intersects food box
-        //add hunger value
-        //
 
 
-        if(destination.x - position.x < speed && destination.z - position.z < speed){
+        if (boxIntersection(getBoundingBox(), getDestinationPoint())) {
             //collision detected
-            idle = true;
-            System.out.println("reached destination " + canEat() + " " + idle + " hunger: " + hunger);
             startTime = System.currentTimeMillis();
             elapsedTime = 0;
             elapsedSeconds = 0;
+            destination = null;
+        }else{
+            position.add(moveVector.mul(speed));
         }
     }
 
 
-    public void walkToPoint(){
-        idle = false;
-        destination = new Vector3f();
+    public void findRandomDesto(){
         Random random = new Random();
         float xMin = awarenessBox.getMesh().getMinX() * awarenessBox.getScale() + position.x;
         float xMax = awarenessBox.getMesh().getMaxX() * awarenessBox.getScale() + position.x;
@@ -297,11 +287,59 @@ public class Deer extends Animal {
         float zMax = awarenessBox.getMesh().getMaxZ() * awarenessBox.getScale() + position.z;
         float zDest = (random.nextFloat() * (zMax - zMin) + zMin);
 
-        destination.x = xDest;
-        destination.y = yDest;
-        destination.z = zDest;
+        destination = new Vector3f(xDest, yDest, zDest);
 
-        destinationPoint.setPosition(destination.x, position.y, destination.z);
+        //if destination point out of bounds repeat random destination until within bounds
+        if(checkOutOfBounds()){
+            findRandomDesto();
+        }
+
+    }
+
+    public void canEat(){
+        if(intersectingPlantObjects.size() > 0) {
+            objectTarget = intersectingPlantObjects.get(0);
+            destination = new Vector3f(objectTarget.getPosition().x, objectTarget.getPosition().y, objectTarget.getPosition().z);
+            if (isSelected()) {
+                System.out.println("can eat");
+                System.out.println(destination.x);
+                System.out.println(destination.y); }
+        }
+    }
+
+    public boolean checkOutOfBounds(){
+        if(terrain == null){
+            return false;
+        }
+        if(destination.x > terrain.getTopLeftX() + terrain.getBoundingWidth()){
+            System.out.println("beyond MaxX");
+            return true;
+        }
+
+        if(destination.x < terrain.getTopLeftX()){
+            System.out.println("beyond MinX");
+            return true;
+        }
+
+        if(destination.z > terrain.getTopLeftZ() + terrain.getBoundingLength()){
+            System.out.println("beyond MaxZ");
+            return true;
+        }
+
+        if(destination.z < terrain.getTopLeftZ()){
+            System.out.println("beyond MinZ");
+            return true;
+        }
+        return false;
+    }
+
+    public void calculateStats(){
+        hunger -= 0.001f;
+        if(hunger <= 0){
+            scene.removeItem(this);
+            scene.removeItem(this.boundingBox);
+            scene.removeItem(this.awarenessBox);
+        }
     }
 
     public void jump(){
@@ -314,21 +352,6 @@ public class Deer extends Animal {
 
             velocity -= velocity / 1000;
         }
-    }
-
-    public boolean canEat(){
-        if(hunger <= maxHunger / 2f) {
-            if (intersectingPlantObjects != null) {
-                for (Plant g : intersectingPlantObjects) {
-                    if (g instanceof Grass) {
-                        objectTarget = g;
-                        goingToFood = true;
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
     }
 
 
@@ -378,11 +401,6 @@ public class Deer extends Animal {
     }
 
     @Override
-    protected void move() {
-
-    }
-
-    @Override
     public Vector3f getPosition() {
         return position;
     }
@@ -410,7 +428,6 @@ public class Deer extends Animal {
         rotation.y = y;
         rotation.z = z;
     }
-
 
     @Override
     public Mesh getMesh() {
@@ -503,6 +520,16 @@ public class Deer extends Animal {
         return boundingBox;
     }
 
+    @Override
+    public boolean isSelected() {
+        return selected;
+    }
+
+    @Override
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+    }
+
     public void setBoundingBox(BoundingBox boundingBox) {
         this.boundingBox = boundingBox;
     }
@@ -529,5 +556,13 @@ public class Deer extends Animal {
 
     public void setDestinationPoint(BoundingBox destinationPoint) {
         this.destinationPoint = destinationPoint;
+    }
+
+    public EntityHud getHud() {
+        return hud;
+    }
+
+    public void setHud(EntityHud hud) {
+        this.hud = hud;
     }
 }

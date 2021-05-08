@@ -27,6 +27,13 @@ public class Terrain {
     private float minY;
 
     private float maxY;
+
+    private float worldOffset = 10f;
+
+    private float topLeftX;
+    private float topLeftZ;
+    private float boundingWidth;
+    private float boundingLength;
     /**
      * It will hold the bounding box for each terrain block
      */
@@ -215,16 +222,48 @@ public class Terrain {
         float scale = terrainBlock.getScale();
         Vector3f position = terrainBlock.getPosition();
 
-        float topLeftX = HeightMapMesh.STARTX * scale + position.x;
-        float topLeftZ = HeightMapMesh.STARTZ * scale + position.z;
-        float width = Math.abs(HeightMapMesh.STARTX * 8) * scale;
-        float height = Math.abs(HeightMapMesh.STARTZ * 8) * scale;
-        Box2D boundingBox = new Box2D(topLeftX, topLeftZ, width, height);
+        topLeftX = (HeightMapMesh.STARTX * scale + position.x) - worldOffset;
+        topLeftZ = (HeightMapMesh.STARTZ * scale + position.z) - worldOffset;
+        boundingWidth = Math.abs(HeightMapMesh.STARTX * 8) * scale;
+        boundingLength = Math.abs(HeightMapMesh.STARTZ * 8) * scale;
+        Box2D boundingBox = new Box2D(topLeftX, topLeftZ, boundingWidth, boundingLength);
         return boundingBox;
     }
 
     public Box2D[][] getBoundingBoxes() {
         return boundingBoxes;
+    }
+
+    public float getTopLeftX() {
+        return topLeftX;
+    }
+
+    public void setTopLeftX(float topLeftX) {
+        this.topLeftX = topLeftX;
+    }
+
+    public float getTopLeftZ() {
+        return topLeftZ;
+    }
+
+    public void setTopLeftZ(float topLeftZ) {
+        this.topLeftZ = topLeftZ;
+    }
+
+    public float getBoundingWidth() {
+        return boundingWidth;
+    }
+
+    public void setBoundingWidth(float boundingWidth) {
+        this.boundingWidth = boundingWidth;
+    }
+
+    public float getBoundingLength() {
+        return boundingLength;
+    }
+
+    public void setBoundingLength(float boundingLength) {
+        this.boundingLength = boundingLength;
     }
 
     public TerrainItem[] getGameItems() {
@@ -243,8 +282,8 @@ public class Terrain {
 
         //set size of 2d box
         public Box2D(float x, float y, float width, float height) {
-            this.x = x - 10f;
-            this.y = y - 10f;
+            this.x = x;
+            this.y = y;
             this.width = width;
             this.height = height;
         }

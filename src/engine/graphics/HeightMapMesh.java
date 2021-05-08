@@ -253,7 +253,7 @@ public class HeightMapMesh {
         System.out.println("indices length: " + indicesArr.length + " colors length: " + floatColour.length + " heightlist length: " + " positions length: " + posArr.length + " height array length: ");
 
 
-        this.mesh = new Mesh(posArr, texCoordsArr, floatColour, normalsArr, indicesArr, false);
+        this.mesh = new Mesh(posArr, texCoordsArr, floatColour, normalsArr, indicesArr);
         this.mesh.setMaterial(null);
     }
 
@@ -403,7 +403,7 @@ public class HeightMapMesh {
 //            }
 
         System.out.println("indices length: " + indicesArr.length + " colors length: " + floatColour.length + " heightlist length: " + heightList.size() + " positions length: " + posArr.length + " height array length: ");
-        this.mesh = new Mesh(posArr, texCoordsArr, floatColour, normalsArr, indicesArr, false);
+        this.mesh = new Mesh(posArr, texCoordsArr, floatColour, normalsArr, indicesArr);
 //        mesh.setMaterial(new Material(new Vector4f(0, 1, 0.0f, 1), 0.0f));
 //        mesh.setMaterial(new Material());
     }

@@ -29,4 +29,6 @@ public abstract class DynamicGameItem extends GameItem {
     public abstract Mesh getMesh();
 
     public abstract void setMesh(Mesh mesh);
+
+
 }

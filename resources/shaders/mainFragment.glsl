@@ -9,6 +9,7 @@ in vec3 mvVertexPos;
 flat in vec3 exColour;
 in vec4 mlightviewVertexPos;
 in mat4 outModelViewMatrix;
+in float outSelected;
 
 out vec4 fragColor;
 
@@ -224,6 +225,9 @@ void main()
     float shadow = calcShadow(mlightviewVertexPos);
 
     fragColor = vec4(exColour, 1.0);
+    if(outSelected > 0){
+        fragColor = vec4(exColour.x, exColour.y, 1, 1);
+    }
 
 //    fragColor = clamp(ambientC * vec4(ambientLight, 1) + diffuseSpecularComp * shadow, 0, 1);
 //    fragColor = vec4(exColour, 1.0);

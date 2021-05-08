@@ -18,8 +18,16 @@ public class GameEngine implements Runnable {
 
     private final MouseInput mouseInput;
 
-    public GameEngine(String windowTitle, int width, int height, boolean vSync, IGameLogic gameLogic) throws Exception {
-        window = new Window(windowTitle, width, height, vSync);
+    private String windowTitle;
+
+    public GameEngine(String windowTitle, boolean vSync, Window.WindowOptions opts, IGameLogic gameLogic) throws Exception {
+        this(windowTitle, 0, 0, vSync, opts, gameLogic);
+    }
+
+
+    public GameEngine(String windowTitle, int width, int height, boolean vSync, Window.WindowOptions opts, IGameLogic gameLogic) throws Exception {
+        this.windowTitle = windowTitle;
+        window = new Window(windowTitle, width, height, vSync, opts);
         mouseInput = new MouseInput();
         this.gameLogic = gameLogic;
         timer = new Timer();
@@ -86,7 +94,7 @@ public class GameEngine implements Runnable {
     }
 
     protected void update(float interval) {
-        gameLogic.update(interval, mouseInput);
+        gameLogic.update(interval, mouseInput, window);
     }
 
     protected void render() {

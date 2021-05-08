@@ -58,8 +58,18 @@ public class Box3D extends StaticGameItem {
     }
 
     @Override
-    protected BoundingBox getBoundingBox() {
+    public BoundingBox getBoundingBox() {
         return null;
+    }
+
+    @Override
+    public boolean isSelected() {
+        return false;
+    }
+
+    @Override
+    public void setSelected(boolean selected) {
+
     }
 
     @Override

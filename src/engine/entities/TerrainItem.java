@@ -28,8 +28,18 @@ public class TerrainItem extends StaticGameItem {
     }
 
     @Override
-    protected BoundingBox getBoundingBox() {
+    public BoundingBox getBoundingBox() {
         return null;
+    }
+
+    @Override
+    public boolean isSelected() {
+        return selected;
+    }
+
+    @Override
+    public void setSelected(boolean selected) {
+        this.selected = selected;
     }
 
     @Override
