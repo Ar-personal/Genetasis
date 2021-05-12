@@ -199,7 +199,8 @@ float calcShadow(vec4 position)
 void main()
 {
 
-//    setupColours(material);
+
+    setupColours(material, outTexCoord);
 
 
     vec3 currNomal = calcNormal(material, mvVertexNormal, outTexCoord, outModelViewMatrix);
@@ -224,13 +225,21 @@ void main()
 
     float shadow = calcShadow(mlightviewVertexPos);
 
-    fragColor = vec4(exColour, 1.0);
-    if(outSelected > 0){
-        fragColor = vec4(exColour.x, exColour.y, 1, 1);
+//    fragColor = vec4(exColour, 1.0);
+
+
+    if(material.hasTexture == 1){
+        fragColor = clamp(ambientC * vec4(ambientLight, 1) + diffuseSpecularComp * shadow, 0, 1);
+    }else{
+        fragColor = vec4(exColour, 1.0);
     }
 
-//    fragColor = clamp(ambientC * vec4(ambientLight, 1) + diffuseSpecularComp * shadow, 0, 1);
-//    fragColor = vec4(exColour, 1.0);
+    if(outSelected > 0){
+        fragColor = vec4(fragColor.x, fragColor.y, 1, 1);
+    }
+
+
+
 
 //    if ( fog.activeFog == 1 )
 //    {

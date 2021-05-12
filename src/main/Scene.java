@@ -3,9 +3,11 @@ package main;
 import engine.entities.*;
 import engine.graphics.Fog;
 import engine.graphics.Mesh;
-import engine.graphics.SceneLight;
+import engine.hud.EntityHud;
+import engine.hud.Hud;
+import engine.lights.SceneLight;
 import engine.graphics.Window;
-import engine.objects.SkyBox;
+
 import engine.objects.Terrain;
 import engine.utils.OBJLoader;
 import org.joml.Vector3f;
@@ -15,17 +17,21 @@ import java.util.*;
 public class Scene {
 
     private Map<Mesh, List<GameItem>> meshMap;
-//    private Map<Mesh, List<GameItem>> boundingMap;
+    private Map<Mesh, List<GameItem>> tempMap;
     private List<GameItem> gameItems = new ArrayList<>();
+    private List<GameItem> itemsToBeAdded = new ArrayList<>();
     private List<GameItem> removedItems = new ArrayList<>();
     private List<Deer> deers = new ArrayList<>();
     private List<Grass> grassList = new ArrayList<>();
 
+    private Mesh deerMesh = new OBJLoader().loadMesh("/models/Deer.obj", new Vector3f(60, 15, 30), false);
+    private Mesh deerChildMesh = new OBJLoader().loadMesh("/models/Deer.obj", new Vector3f(60, 255, 30), false);
+
+    private Hud hud;
     private EntityHud entityHud;
 
     private Game game;
     private Window window;
-    private SkyBox skyBox;
     private Terrain terrain;
     private SceneLight sceneLight;
 
@@ -39,10 +45,13 @@ public class Scene {
         this.terrain = terrain;
         this.window = window;
         meshMap = new HashMap();
+        tempMap = new HashMap();
+        hud = new Hud();
+        hud.init(window);
         entityHud = new EntityHud();
         entityHud.init(window);
 
-//        boundingMap = new HashMap<>();
+
         fog = Fog.NOFOG;
     }
 
@@ -50,57 +59,81 @@ public class Scene {
         return meshMap;
     }
 
-    public void setGameItems(StaticGameItem[] staticGameItems) {
-        numGameItems = staticGameItems != null ? staticGameItems.length : 0;
-        for (int i=0; i<numGameItems; i++) {
-            StaticGameItem staticGameItem = staticGameItems[i];
-            Mesh mesh = staticGameItem.getMesh();
-            List<GameItem> list = meshMap.get(mesh);
-            if ( list == null ) {
-                list = new ArrayList<>();
-                meshMap.put(mesh, list);
-            }
-            list.add(staticGameItem);
-            gameItems.add(staticGameItem);
-        }
+
+    public void setMeshMap(Map<Mesh, List<GameItem>> meshMap) {
+        this.meshMap = meshMap;
     }
 
     public void addStaticGameItem(StaticGameItem staticGameItem) {
-        numGameItems++;
-        List<GameItem> list = meshMap.get(staticGameItem.getMesh());
-        if ( list == null ) {
-            list = new ArrayList<>();
-            meshMap.put(staticGameItem.getMesh(), list);
+        Mesh[] meshes = staticGameItem.getMeshes();
+        for(Mesh mesh : meshes) {
+            List<GameItem> list = tempMap.get(mesh);
+            if (list == null) {
+                list = new ArrayList<>();
+                tempMap.put(mesh, list);
+            }
+                list.add(staticGameItem);
         }
-        list.add(staticGameItem);
-        gameItems.add(staticGameItem);
     }
 
         public void addDynamicGameItem(DynamicGameItem dynamicGameItem) {
-        numGameItems++;
-            List<GameItem> list = meshMap.get(dynamicGameItem.getMesh());
-            if ( list == null ) {
-                list = new ArrayList<>();
-                meshMap.put(dynamicGameItem.getMesh(), list);
+            Mesh[] meshes = dynamicGameItem.getMeshes();
+            for(Mesh mesh : meshes) {
+                List<GameItem> list = tempMap.get(mesh);
+                if (list == null) {
+                    list = new ArrayList<>();
+                    tempMap.put(mesh, list);
+                }
+                list.add(dynamicGameItem);
             }
-            list.add(dynamicGameItem);
-            gameItems.add(dynamicGameItem);
-    }
-
+        }
 
     public void addBoundingBox(GameItem boundingBoxItem) {
-        numGameItems++;
-        List<GameItem> list = meshMap.get(boundingBoxItem.getMesh());
-        if ( list == null ) {
-            list = new ArrayList<>();
-            meshMap.put(boundingBoxItem.getMesh(), list);
+        Mesh[] meshes = boundingBoxItem.getMeshes();
+        for(Mesh mesh : meshes) {
+            List<GameItem> list = tempMap.get(mesh);
+            if (list == null) {
+                list = new ArrayList<>();
+                tempMap.put(mesh, list);
+
+            }
+            list.add(boundingBoxItem);
         }
-        list.add(boundingBoxItem);
-        gameItems.add(boundingBoxItem);
     }
 
+
+
+
+
+    public void updateMeshMap(){
+        if(!tempMap.isEmpty()){
+            for(Mesh m : tempMap.keySet()){
+                List list = meshMap.get(m);
+                if (list == null) {
+                    list = new ArrayList<>();
+                    meshMap.put(m, list);
+                }
+                list.addAll(tempMap.get(m));
+            }
+        }
+        tempMap = new HashMap<Mesh, List<GameItem>>();
+    }
+
+
+
+
     public void update(){
-        if(gameItems != null) {
+        //add every game item in hashmap to gameitem list
+        for(Mesh m : meshMap.keySet()){
+            List list = meshMap.get(m);
+            for(Object g : list){
+                if(!gameItems.contains(g)){
+                    gameItems.add((GameItem) g);
+                }
+            }
+        }
+
+        if(gameItems.size() > 1) {
             entitySelected = false;
             for (GameItem gameItem : gameItems) {
                 //while looping through entities check if any are selected, if not then don't render any hud's for entities
@@ -108,8 +141,57 @@ public class Scene {
                     entitySelected = true;
                 }
                 gameItem.update();
+                if(gameItem instanceof Grass) {
+                    if (!grassList.contains(gameItem)) {
+                        grassList.add((Grass) gameItem);
+                    }
+
+                    for (Grass g : grassList) {
+                        if (g == gameItem) {
+                            continue;
+                        }
+
+                        if (((Grass) gameItem).boxIntersection(((Grass) gameItem).getAwarenessBox(), g.getBoundingBox())) {
+                            ((Grass) gameItem).addIntersectingGrassObject(g);
+                        } else {
+                            if (((Grass) gameItem).getIntersectingGrassObjects() != null) {
+                                if (((Grass) gameItem).getIntersectingGrassObjects().contains(g)) {
+                                    ((Grass) gameItem).removeIntersectingObject(g);
+                                }
+                            }
+                        }
+                    }
+                }
 
                 if(gameItem instanceof Deer){
+                    //check for mates
+                    if(!deers.contains(gameItem)){
+                        deers.add((Deer) gameItem);
+                    }
+                    for(Deer d : deers) {
+                        //dont check itself
+                        if (d == gameItem) {
+                            continue;
+                        }
+
+                        //add eachother to intersecting obj list
+                        if (((Deer) gameItem).boxIntersection(((Deer) gameItem).getAwarenessBox(), d.getBoundingBox())) {
+                            ((Deer) gameItem).addIntersectingDeerObject(d);
+                        } else {
+                            if (((Deer) gameItem).getIntersectingDeerObjects() != null) {
+                                if (((Deer) gameItem).getIntersectingObjects().contains(d)) {
+                                    ((Deer) gameItem).removeIntersectingObject(d);
+                                }
+
+                                if (d.getIntersectingDeerObjects().contains(gameItem)) {
+                                    d.removeIntersectingDeerObject((Deer) gameItem);
+                                }
+                            }
+                        }
+                    }
+
+
+                    //check for edible plants
                     for (Grass gr : grassList) {
                         if (((Deer) gameItem).boxIntersection(((Deer) gameItem).getAwarenessBox(), gr.getBoundingBox())) {
                                 if (!((Deer) gameItem).getIntersectingObjects().contains(gr)) {
@@ -124,12 +206,16 @@ public class Scene {
                         }
                     }
                 }
+            }
 
+            if(removedItems.size() > 0){
+                for(GameItem g : removedItems){
+                    if(gameItems.contains(g)){
+                        gameItems.remove(g);
+                    }
+                }
             }
-            if(removedItems !=null) {
-                gameItems.removeAll(removedItems);
-                removedItems = new ArrayList<>();
-            }
+            //remove items
         }
     }
 
@@ -141,27 +227,44 @@ public class Scene {
     }
 
 
-    public void addDeers(int amt) throws Exception {
+
+    public void addDeer(Vector3f spawnLocation, boolean newAdd){
         Deer deer;
         Random random = new Random();
-        for(int i = 0; i < amt; i++) {
             float maxHunger = (random.nextFloat() * (200f - 100f) + 100f);
-            Mesh deerMesh = new OBJLoader().loadMesh("/models/Deer.obj", new Vector3f(60, 15, 30), false);
-            deer = new Deer(game.getScene(), deerMesh, randomSpawn(), 3f, maxHunger, 0, 0.01f, 10, 10, 50, 0.001f);
+            float maxSize = random.nextFloat() * (0.002f - 0.0015f) + 0.0015f;
+        Mesh dM;
+
+        if(!newAdd){
+            dM = deerMesh;
+        }else {
+            dM = deerChildMesh;
+        }
+
+        if(spawnLocation == null){
+                deer = new Deer(game.getScene(), dM, randomSpawn(), 3f, maxHunger, 0, 0.01f, 10, 10, 50, maxSize);
+            }else{
+                deer = new Deer(game.getScene(), dM, spawnLocation, 3f, maxHunger, 0, 0.01f, 10, 10, 50, maxSize);
+            }
+
             deer.setHud(entityHud);
             deer.setTerrain(terrain);
-            deer.setScale(0.001f);
+            deer.setScale(0.0005f);
+            deer.setSize(0.0005f);
             deer.setRotation(0, 180f, 0);
             deer.getBoundingBox().setRotation(0, 180f, 0);
             deer.getAwarenessBox().setRotation(0, 180f, 0);
-            deers.add(deer);
+            deer.addGeneration();
+
 
             addDynamicGameItem(deer);
 //            addBoundingBox(deer.getBoundingBox());
 //            addBoundingBox(deer.getAwarenessBox());
             addBoundingBox(deer.getDestinationPoint());
 
-        }
+
+
+
     }
 
     public Vector3f randomSpawn(){
@@ -180,13 +283,6 @@ public class Scene {
 //        return boundingMap;
 //    }
 
-    public SkyBox getSkyBox() {
-        return skyBox;
-    }
-
-    public void setSkyBox(SkyBox skyBox) {
-        this.skyBox = skyBox;
-    }
 
     public SceneLight getSceneLight() {
         return sceneLight;
@@ -197,7 +293,6 @@ public class Scene {
     }
 
     public void removeItem(GameItem gameItem){
-//        gameItems.remove(gameItem);
         if(meshMap.get(gameItem.getMesh()) != null) {
             meshMap.get(gameItem.getMesh()).remove(gameItem);
         }
@@ -262,9 +357,23 @@ public class Scene {
         grassList.remove(g);
     }
 
+    public List<GameItem> getItemsToBeAdded() {
+        return itemsToBeAdded;
+    }
 
+    public void resetItemsToBeAdded() {
+        this.itemsToBeAdded = new ArrayList<>();
+    }
 
     public void setGrassList(List<Grass> grassList) {
         this.grassList = grassList;
+    }
+
+    public Hud getHud() {
+        return hud;
+    }
+
+    public void setHud(Hud hud) {
+        this.hud = hud;
     }
 }

@@ -1,16 +1,13 @@
 package engine.entities;
 
 import engine.graphics.Mesh;
+import engine.hud.Hud;
 import engine.objects.Terrain;
-import main.Box3D;
-import main.EntityHud;
+import engine.hud.EntityHud;
 import main.Scene;
 import org.joml.Random;
 import org.joml.Vector3f;
-import org.lwjgl.system.CallbackI;
-import org.lwjglx.util.glu.GLU;
 
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,15 +23,20 @@ public class Deer extends Animal {
     protected float hunger = 20f;
     protected float maxHunger;
     protected int thirst = 0;
-    protected float size;
-    protected float speed;
+    protected float size, maxSize;
+    protected float speed, defaultSpeed;
     protected float awarenessScale;
     protected int health = 0;
     protected int stamina;
     protected int energy;
+    protected int generation = 1;
+    protected int waitAmt = 3;
+    protected float growthAmt = 0.0000001f;
     protected float[] awarenessCubePositions;
-    protected boolean wandering = false, idle, reachedIdleDestination = false;
+    protected boolean wandering = false, idle, reachedIdleDestination = false, aboutToBang = false;
     protected long startTime, elapsedTime, elapsedSeconds;
+    protected boolean male;
+
 
 
     protected float width, height, length;
@@ -45,8 +47,9 @@ public class Deer extends Animal {
     protected BoundingBox boundingBox, awarenessBox, destinationPoint;
     protected Terrain terrain;
     protected List<Plant> intersectingPlantObjects = new ArrayList<>();
+    protected List<Deer> intersectingDeerObjects = new ArrayList<>();
 
-    public Deer(Scene scene, Mesh mesh, Vector3f position, float awareness, float maxHunger, int thirst, float speed, int health, int stamina, int energy, float size) {
+    public Deer(Scene scene, Mesh mesh, Vector3f position, float awareness, float maxHunger, int thirst, float speed, int health, int stamina, int energy, float maxSize) {
         super(mesh);
         this.scene = scene;
         this.mesh = mesh;
@@ -58,11 +61,16 @@ public class Deer extends Animal {
         this.health = health;
         this.stamina = stamina;
         this.energy = energy;
-        this.size = size;
+        this.maxSize = maxSize;
+
+        defaultSpeed = speed;
+        size = scale;
 
         init();
         destination = null;
-    }
+        java.util.Random random = new java.util.Random();
+        male = random.nextBoolean();
+}
 
     public void init(){
         startTime = System.currentTimeMillis();
@@ -149,7 +157,7 @@ public class Deer extends Animal {
 
         destinationPointMesh = new Mesh(awarenessCubePositions, null, colours, null, indices);
         destinationPoint = new BoundingBox(destinationPointMesh, new Vector3f(position.x, position.y, position.z));
-        destinationPoint.setScale(0.1f);
+        destinationPoint.setScale(0.02f);
 
 
     }
@@ -157,8 +165,37 @@ public class Deer extends Animal {
 
     @Override
     public void update() {
+        //check for game speedups
+        switch (Hud.gameSpeed){
+            case 1:
+                speed = defaultSpeed;
+                waitAmt = 3;
+                growthAmt = 0.0000001f;
+                break;
+            case 2:
+                speed = defaultSpeed * 2;
+                waitAmt = 2;
+                growthAmt = 0.0000002f;
+                break;
+            case 3:
+                speed = defaultSpeed * 3;
+                waitAmt = 1;
+                growthAmt = 0.0000003f;
+                break;
+
+                default:
+                    growthAmt = 0.0000001f;
+                    waitAmt = 3;
+                    speed = defaultSpeed;
+                    break;
+        }
+
+
         boundingBox.setPosition(position.x, position.y, position.z);
         awarenessBox.setPosition(position.x, position.y, position.z);
+        scale = size;
+        boundingBox.setScale(scale);
+
 
         calculateStats();
 
@@ -175,6 +212,7 @@ public class Deer extends Animal {
 
         //update hud to display specific stats of this deer entity
         if(isSelected() || boundingBox.isSelected() || awarenessBox.selected){
+            System.out.println("about to bang?: " + aboutToBang);
             hud.setAwareness(awareness);
             hud.setEnergy(energy);
             hud.setHealth(health);
@@ -185,13 +223,20 @@ public class Deer extends Animal {
             hud.setThirst(thirst);
             hud.setSpeed(speed);
             hud.setEnergy(energy);
+            hud.setMale(male);
+            hud.setMaxSize(maxSize);
         }
 
-        if(destination == null && elapsedSeconds > 3){
+
+        if(destination == null && elapsedSeconds > waitAmt){
+            mate();
+        }
+
+        if(destination == null && elapsedSeconds > waitAmt){
             canEat();
         }
-        
-        if(destination == null && elapsedSeconds > 3){
+
+        if(destination == null && elapsedSeconds > waitAmt){
             findRandomDesto();
         }
 
@@ -210,12 +255,7 @@ public class Deer extends Animal {
         }
 
         if(destination != null) {
-            if (terrain != null) {
-                destinationPoint.setPosition(destination.x, terrain.getHeight(new Vector3f(destination.x, position.y, destination.z)), destination.z);
-
-            } else {
-                destinationPoint.setPosition(destination.x, position.y, destination.z);
-            }
+            destinationPoint.setPosition(destination.x, position.y, destination.z);
         }
 
         //checking if the deer can eat must come after the target being set to null
@@ -226,7 +266,7 @@ public class Deer extends Animal {
     }
 
 
-    public void moveToDestination(){
+    public void moveToDestination() {
         //get unit vector of the destination
         moveVector.x = destination.x - position.x;
         moveVector.y = 0;
@@ -262,14 +302,22 @@ public class Deer extends Animal {
         //check if the deer is within a certain threshold in range of the target, speed may be a good step
         //check for collission
 
-
+        //check if the deer reaches its current destination, if yes destination is set to null and be reset by the update method
         if (boxIntersection(getBoundingBox(), getDestinationPoint())) {
+            if(aboutToBang){
+                hunger -= maxHunger / 2;
+                if(!male){
+                    scene.addDeer(new Vector3f(position.x, terrain.getHeight(new Vector3f(position.x, position.y, position.z)), position.z), true);
+                }
+            }
             //collision detected
             startTime = System.currentTimeMillis();
             elapsedTime = 0;
             elapsedSeconds = 0;
             destination = null;
+            aboutToBang = false;
         }else{
+            //keep moving towards destination vector3
             position.add(moveVector.mul(speed));
         }
     }
@@ -296,6 +344,25 @@ public class Deer extends Animal {
 
     }
 
+
+    public void calculateStats(){
+        //aging
+        if(size < maxSize){
+            size += growthAmt;
+            if(size > maxSize) {
+                size = maxSize;
+            }
+        }
+
+
+        hunger -= 0.001f;
+        if(hunger <= 0){
+//            scene.removeItem(this);
+//            scene.removeItem(this.boundingBox);
+//            scene.removeItem(this.awarenessBox);
+        }
+    }
+
     public void canEat(){
         if(intersectingPlantObjects.size() > 0) {
             objectTarget = intersectingPlantObjects.get(0);
@@ -304,7 +371,48 @@ public class Deer extends Animal {
                 System.out.println("can eat");
                 System.out.println(destination.x);
                 System.out.println(destination.y); }
+
         }
+    }
+
+    public void mate(){
+        if(aboutToBang){
+            return;
+        }
+        if(intersectingDeerObjects.size() > 0){
+            for (Deer deer : intersectingDeerObjects){
+                canMate(deer);
+            }
+        }
+    }
+
+    public void canMate(Deer otherDeer){
+        //set direction of both deers to each other
+        //intersect add new deer to scene at female location
+
+
+        //maybe add a timer variable to prevent constant checking if incompatible mates
+        //deers are same sex
+        if(this.male == otherDeer.male){
+            return;
+        }
+
+        //if both deer are not atleast half grown then dont mate
+        if(this.size < maxSize / 2 || otherDeer.size < otherDeer.maxSize / 2){
+            return;
+        }
+
+        if(this.aboutToBang || otherDeer.aboutToBang){
+            return;
+        }
+
+        //make sure both deer are well fed
+        if(this.hunger < this.maxHunger / 2 || otherDeer.hunger < otherDeer.maxHunger / 2){
+            return;
+        }
+        //they move towards each other
+        this.destination = otherDeer.position;
+        this.aboutToBang = true;
     }
 
     public boolean checkOutOfBounds(){
@@ -333,14 +441,7 @@ public class Deer extends Animal {
         return false;
     }
 
-    public void calculateStats(){
-        hunger -= 0.001f;
-        if(hunger <= 0){
-            scene.removeItem(this);
-            scene.removeItem(this.boundingBox);
-            scene.removeItem(this.awarenessBox);
-        }
-    }
+
 
     public void jump(){
         float velocity = 0.8f;
@@ -372,15 +473,18 @@ public class Deer extends Animal {
     }
 
     public void removeIntersectingObject(GameItem object) {
-        if(intersectingPlantObjects == null){
-            intersectingPlantObjects = new ArrayList<Plant>();
+        if(intersectingPlantObjects.contains(object)) {
+            intersectingPlantObjects.remove(object);
         }
-        intersectingPlantObjects.remove(object);
     }
 
 
     public List<Plant> getIntersectingObjects() {
         return intersectingPlantObjects;
+    }
+
+    public void addGeneration(){
+        generation += 1;
     }
 
 
@@ -565,4 +669,25 @@ public class Deer extends Animal {
     public void setHud(EntityHud hud) {
         this.hud = hud;
     }
+
+
+    public void addIntersectingDeerObject(Deer object) {
+        if(intersectingDeerObjects == null){
+            intersectingDeerObjects = new ArrayList<>();
+        }
+        intersectingDeerObjects.add(object);
+    }
+
+    public List<Deer> getIntersectingDeerObjects() {
+        return intersectingDeerObjects;
+    }
+
+    public void removeIntersectingDeerObject(Deer object) {
+        if(intersectingDeerObjects == null){
+            intersectingDeerObjects = new ArrayList<Deer>();
+        }
+        intersectingDeerObjects.remove(object);
+    }
+
+
 }

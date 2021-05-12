@@ -185,14 +185,19 @@ public class Mesh {
     }
 
     protected void initRender() {
-        if(material != null) {
-            texture = material.getTexture();
-        }
+        Texture texture = material != null ? material.getTexture() : null;
         if (texture != null) {
-            // Activate firs texture bank
+            // Activate first texture bank
             glActiveTexture(GL_TEXTURE0);
             // Bind the texture
             glBindTexture(GL_TEXTURE_2D, texture.getId());
+        }
+        Texture normalMap = material != null ? material.getNormalMap() : null;
+        if (normalMap != null) {
+            // Activate second texture bank
+            glActiveTexture(GL_TEXTURE1);
+            // Bind the texture
+            glBindTexture(GL_TEXTURE_2D, normalMap.getId());
         }
 
         // Draw the mesh
@@ -206,14 +211,29 @@ public class Mesh {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    protected void render() {
-        initRender();
+    public void render() {
+        if(this.material != null){
+        Texture texture = material.getTexture();
+        if (texture != null) {
+            // Activate firs texture bank
+            glActiveTexture(GL_TEXTURE0);
+            // Bind the texture
+            glBindTexture(GL_TEXTURE_2D, texture.getId());
+        }
+
+        // Draw the mesh
+
+            }
+
+        glBindVertexArray(getVaoId());
 
         glDrawElements(GL_TRIANGLES, getVertexCount(), GL_UNSIGNED_INT, 0);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-        endRender();
+        // Restore state
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
+
 
     public void renderList(List<GameItem> gameItems, Consumer<GameItem> consumer) {
         initRender();
@@ -238,9 +258,11 @@ public class Mesh {
         }
 
         // Delete the texture
-        Texture texture = material.getTexture();
-        if (texture != null) {
-            texture.cleanup();
+        if(material != null) {
+            Texture texture = material.getTexture();
+            if (texture != null) {
+                texture.cleanup();
+            }
         }
 
         // Delete the VAO

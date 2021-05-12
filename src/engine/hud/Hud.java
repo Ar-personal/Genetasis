@@ -1,21 +1,13 @@
-package main;
+package engine.hud;
 
-import engine.entities.GameItem;
-import engine.entities.HudItem;
-import engine.entities.StaticGameItem;
-import engine.graphics.Material;
-import engine.graphics.Mesh;
 import engine.graphics.Window;
-import engine.utils.FontTexture;
-import engine.utils.IHud;
-import engine.utils.OBJLoader;
-import engine.entities.TextItemStatic;
+import engine.hud.EntityHud;
 import engine.utils.Utils;
-import org.joml.Vector4f;
+import main.MouseInput;
 import org.lwjgl.nanovg.NVGColor;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjglx.input.Mouse;
 
-import java.awt.*;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.text.DateFormat;
@@ -25,13 +17,15 @@ import java.util.Date;
 import java.util.List;
 
 import static java.sql.Types.NULL;
-import static org.lwjgl.glfw.GLFW.glfwGetCursorPos;
+import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.nanovg.NanoVG.*;
 import static org.lwjgl.nanovg.NanoVGGL2.*;
 
 public class Hud {
 
     protected static final String FONT_NAME = "BOLD";
+
+    public static int gameSpeed = 1;
 
     protected long vg;
 
@@ -50,6 +44,7 @@ public class Hud {
     protected List<EntityHud> entityHuds = new ArrayList<>();
 
     protected Window window;
+
 
     public void init(Window window) throws Exception {
         this.window = window;
@@ -71,34 +66,49 @@ public class Hud {
         counter = 0;
     }
 
-    public void render(Window window) {
+    public void render(Window window, MouseInput mouseInput) {
         this.window = window;
         nvgBeginFrame(vg, window.getWidth(), window.getHeight(), 1);
 
 
-        // Upper ribbon
-        nvgBeginPath(vg);
-        nvgRect(vg, 0, window.getHeight() - 100, window.getWidth(), 50);
-        nvgFillColor(vg, rgba(0x23, 0xa1, 0xf1, 200, colour));
-        nvgFill(vg);
 
-        // Lower ribbon
-        nvgBeginPath(vg);
-        nvgRect(vg, 0, window.getHeight() - 50, window.getWidth(), 10);
-        nvgFillColor(vg, rgba(0xc1, 0xe3, 0xf9, 200, colour));
-        nvgFill(vg);
 
         glfwGetCursorPos(window.getWindowHandle(), posx, posy);
         int xcenter = 50;
         int ycenter = window.getHeight() - 75;
+
+        int xcenter2 = 100;
+        int ycenter2 = window.getHeight() - 75;
+
+        int xcenter3 = 150;
+        int ycenter3 = window.getHeight() - 75;
+
         int radius = 20;
         int x = (int) posx.get(0);
         int y = (int) posy.get(0);
         boolean hover = Math.pow(x - xcenter, 2) + Math.pow(y - ycenter, 2) < Math.pow(radius, 2);
 
+        boolean hover2 = Math.pow(x - xcenter2, 2) + Math.pow(y - ycenter2, 2) < Math.pow(radius, 2);
+
+        boolean hover3 = Math.pow(x - xcenter3, 2) + Math.pow(y - ycenter3, 2) < Math.pow(radius, 2);
+
+
+
         // Circle
         nvgBeginPath(vg);
         nvgCircle(vg, xcenter, ycenter, radius);
+        nvgFillColor(vg, rgba(0xc1, 0xe3, 0xf9, 200, colour));
+        nvgFill(vg);
+
+
+        nvgBeginPath(vg);
+        nvgCircle(vg, xcenter2, ycenter2, radius);
+        nvgFillColor(vg, rgba(0xc1, 0xe3, 0xf9, 200, colour));
+        nvgFill(vg);
+
+
+        nvgBeginPath(vg);
+        nvgCircle(vg, xcenter3, ycenter3, radius);
         nvgFillColor(vg, rgba(0xc1, 0xe3, 0xf9, 200, colour));
         nvgFill(vg);
 
@@ -107,12 +117,49 @@ public class Hud {
         nvgFontFace(vg, FONT_NAME);
         nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
         if (hover) {
+            if(mouseInput.isLeftButtonReleased()){
+                System.out.println("toggly woggly button 1");
+                gameSpeed = 1;
+            }
             nvgFillColor(vg, rgba(0x00, 0x00, 0x00, 255, colour));
         } else {
             nvgFillColor(vg, rgba(0x23, 0xa1, 0xf1, 255, colour));
 
         }
-        nvgText(vg, 50, window.getHeight() - 87, String.format("%02d", counter));
+        nvgText(vg, 50, window.getHeight() - 87, "1x");
+
+        nvgFontSize(vg, 25.0f);
+        nvgFontFace(vg, FONT_NAME);
+        nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
+        if (hover2) {
+            if(mouseInput.isLeftButtonReleased()){
+                System.out.println("toggly woggly button 2");
+                gameSpeed = 2;
+            }
+            nvgFillColor(vg, rgba(0x00, 0x00, 0x00, 255, colour));
+        } else {
+            nvgFillColor(vg, rgba(0x23, 0xa1, 0xf1, 255, colour));
+
+        }
+
+        nvgText(vg, 100, window.getHeight() - 87, "2x");
+
+
+        nvgFontSize(vg, 25.0f);
+        nvgFontFace(vg, FONT_NAME);
+        nvgTextAlign(vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
+        if (hover3) {
+            if(mouseInput.isLeftButtonReleased()){
+                System.out.println("toggly woggly button 3");
+                gameSpeed = 3;
+            }
+            nvgFillColor(vg, rgba(0x00, 0x00, 0x00, 255, colour));
+        } else {
+            nvgFillColor(vg, rgba(0x23, 0xa1, 0xf1, 255, colour));
+
+        }
+
+        nvgText(vg, 150, window.getHeight() - 87, "3x");
 
         // Render hour text
         nvgFontSize(vg, 40.0f);
@@ -126,6 +173,7 @@ public class Hud {
         // Restore state
         window.restoreState();
     }
+
 
     public void incCounter() {
         counter++;

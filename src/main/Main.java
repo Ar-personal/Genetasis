@@ -13,7 +13,7 @@ public class Main {
             opts.showFps = true;
             opts.compatibleProfile = true;
             opts.antialiasing = true;
-            opts.showTriangles = false;
+            opts.showTriangles = true;
             GameEngine gameEng = new GameEngine("GAME", vSync, opts, gameLogic);
             gameEng.run();
         } catch (Exception excp) {

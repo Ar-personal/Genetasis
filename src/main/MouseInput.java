@@ -16,9 +16,9 @@ public class MouseInput {
 
     private boolean inWindow = false;
 
-    private boolean leftButtonPressed = false;
+    private boolean leftButtonPressed = false, leftButtonReleased = false;
 
-    private boolean rightButtonPressed = false;
+    private boolean rightButtonPressed = false, rightButtonReleased = false;
 
     public MouseInput() {
         previousPos = new Vector2d(-1, -1);
@@ -37,6 +37,8 @@ public class MouseInput {
         glfwSetMouseButtonCallback(window.getWindowHandle(), (windowHandle, button, action, mode) -> {
             leftButtonPressed = button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS;
             rightButtonPressed = button == GLFW_MOUSE_BUTTON_2 && action == GLFW_PRESS;
+            leftButtonReleased = button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE;
+            rightButtonReleased = button == GLFW_MOUSE_BUTTON_2 && action == GLFW_RELEASE;
         });
     }
 
@@ -73,5 +75,29 @@ public class MouseInput {
 
     public boolean isRightButtonPressed() {
         return rightButtonPressed;
+    }
+
+    public void setLeftButtonPressed(boolean leftButtonPressed) {
+        this.leftButtonPressed = leftButtonPressed;
+    }
+
+    public boolean isLeftButtonReleased() {
+        return leftButtonReleased;
+    }
+
+    public void setLeftButtonReleased(boolean leftButtonReleased) {
+        this.leftButtonReleased = leftButtonReleased;
+    }
+
+    public void setRightButtonPressed(boolean rightButtonPressed) {
+        this.rightButtonPressed = rightButtonPressed;
+    }
+
+    public boolean isRightButtonReleased() {
+        return rightButtonReleased;
+    }
+
+    public void setRightButtonReleased(boolean rightButtonReleased) {
+        this.rightButtonReleased = rightButtonReleased;
     }
 }

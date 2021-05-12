@@ -55,48 +55,6 @@ public class Terrain {
         heightMapMesh = new HeightMapMesh(minY, maxY, heights, width, height, textInc, amplitude);
 
 
-        boundingBoxes = new Box2D[terrainSize][terrainSize];
-        for (int row = 0; row < terrainSize; row++) {
-            for (int col = 0; col < terrainSize; col++) {
-                float xDisplacement = (col - ((float) terrainSize - 1) / (float) 2) * scale * HeightMapMesh.getXLength();
-                float zDisplacement = (row - ((float) terrainSize - 1) / (float) 2) * scale * HeightMapMesh.getZLength();
-
-                TerrainItem terrainBlock = new TerrainItem(heightMapMesh.getMesh(), new Vector3f(xDisplacement, 0, zDisplacement));
-                terrainBlock.setScale(scale);
-                terrainItems[row * terrainSize + col] = terrainBlock;
-
-                boundingBoxes[row][col] = getBoundingBox(terrainBlock);
-            }
-        }
-
-
-    }
-
-    public Terrain(int terrainSize, float scale, float minY, float maxY, String heightMapFile, String textureFile, int textInc) throws Exception {
-        this.terrainSize = terrainSize;
-        terrainItems = new TerrainItem[terrainSize * terrainSize];
-
-        ByteBuffer buf = null;
-        int width;
-        int height;
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            IntBuffer w = stack.mallocInt(1);
-            IntBuffer h = stack.mallocInt(1);
-            IntBuffer channels = stack.mallocInt(1);
-
-            buf = stbi_load(heightMapFile, w, h, channels, 4);
-            if (buf == null) {
-                throw new Exception("Image file [" + heightMapFile  + "] not loaded: " + stbi_failure_reason());
-            }
-
-            width = w.get();
-            height = h.get();
-        }
-
-        // The number of vertices per column and row
-        verticesPerCol = width - 1;
-        verticesPerRow = height - 1;
-        heightMapMesh = new HeightMapMesh(minY, maxY, buf, width, height, textInc);
 
         boundingBoxes = new Box2D[terrainSize][terrainSize];
         for (int row = 0; row < terrainSize; row++) {
@@ -112,7 +70,7 @@ public class Terrain {
             }
         }
 
-        stbi_image_free(buf);
+
     }
 
     private float[][] generateHeights(int gridSize, PerlinNoise perlinNoise) {

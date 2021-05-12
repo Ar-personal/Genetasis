@@ -1,5 +1,8 @@
 package engine.graphics;
 
+import engine.lights.DirectionalLight;
+import engine.lights.PointLight;
+import engine.lights.SpotLight;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -34,6 +37,12 @@ public class Shader{
             throw new Exception("Could not find uniform:" + uniformName);
         }
         uniforms.put(uniformName, uniformLocation);
+    }
+
+    public void createUniform(String uniformName, int size) throws Exception {
+        for (int i=0; i<size; i++) {
+            createUniform(uniformName + "[" + i + "]");
+        }
     }
 
     public void createPointLightListUniform(String uniformName, int size) throws Exception {

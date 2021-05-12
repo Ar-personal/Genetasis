@@ -1,4 +1,4 @@
-package engine.utils;
+package engine.hud;
 
 import engine.entities.GameItem;
 import engine.entities.StaticGameItem;

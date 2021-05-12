@@ -7,6 +7,8 @@ public abstract class GameItem {
 
     protected Mesh mesh;
 
+    protected Mesh[] meshes;
+
     protected static Vector3f position;
 
     protected float scale;
@@ -16,12 +18,28 @@ public abstract class GameItem {
     protected boolean selected;
 
     public GameItem(Mesh mesh) {
-        this.mesh = mesh;
+        this.meshes = new Mesh[]{mesh};
     }
 
-    public abstract Mesh getMesh();
+    public GameItem(Mesh[] meshes) {
+        this.meshes = meshes;
+    }
 
-    public abstract void setMesh(Mesh mesh);
+    public Mesh getMesh() {
+        return meshes[0];
+    }
+
+    public Mesh[] getMeshes() {
+        return meshes;
+    }
+
+    public void setMeshes(Mesh[] meshes) {
+        this.meshes = meshes;
+    }
+
+    public void setMesh(Mesh mesh) {
+        this.meshes = new Mesh[]{mesh};
+    }
 
     public abstract Vector3f getPosition();
 
@@ -42,6 +60,15 @@ public abstract class GameItem {
     public abstract boolean isSelected();
 
     public abstract  void setSelected(boolean selected);
+
+
+
+    public void cleanup() {
+        int numMeshes = this.meshes != null ? this.meshes.length : 0;
+        for (int i = 0; i < numMeshes; i++) {
+            this.meshes[i].cleanUp();
+        }
+    }
 
 
 }

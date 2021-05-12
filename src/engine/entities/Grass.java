@@ -1,20 +1,37 @@
 package engine.entities;
 
 import engine.graphics.Mesh;
+import engine.hud.Hud;
+import engine.objects.Terrain;
+import engine.utils.OBJLoader;
+import main.Scene;
+import org.joml.Random;
 import org.joml.Vector3f;
+import org.lwjgl.system.CallbackI;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Grass extends Plant {
 
-    private Mesh mesh, boundingMesh;
-    private Vector3f position;
-    private Vector3f rotation = new Vector3f();
+    protected Scene scene;
+    protected Terrain terrain;
+    protected Mesh mesh, boundingMesh, awarenessMesh, offSpringMesh = new OBJLoader().loadMesh("/models/grass.obj", new Vector3f(50, 200, 200), false);;
+    protected Vector3f position;
+    protected Vector3f rotation = new Vector3f();
+    protected float[] awarenessCubePositions;
+    protected List<Grass> intersectingGrassObjects = new ArrayList<>();
+    protected int growthTime = 60;
 
-    private float foodValue = 15f;
+    protected float foodValue = 15f;
+    protected long startTime, elapsedTime, elapsedSeconds;
 
+    protected BoundingBox boundingBox, awarenessBox;
 
-    private BoundingBox boundingBox;
-    public Grass(Mesh mesh, Vector3f position) {
+    public Grass(Scene scene, Terrain terrain, Mesh mesh, Vector3f position) throws Exception {
         super(mesh);
+        this.scene = scene;
+        this.terrain = terrain;
         this.mesh = mesh;
         this.position = position;
 
@@ -22,6 +39,7 @@ public class Grass extends Plant {
     }
 
     public void init(){
+        startTime = System.currentTimeMillis();
         float[] positions = new float[]{
 
                 mesh.getMinX(),  mesh.getMaxY(),  mesh.getMaxZ(),
@@ -69,9 +87,34 @@ public class Grass extends Plant {
         };
 
 
+        awarenessCubePositions = new float[]{
+                // VO
+                -0.5f,  0.5f ,  0.5f,
+                // V1
+                -0.5f , -0.5f,  0.5f,
+                // V2
+                0.5f , -0.5f,  0.5f ,
+                // V3
+                0.5f ,  0.5f,  0.5f,
+                // V4
+                -0.5f,  0.5f, -0.5f,
+                // V5
+                0.5f ,  0.5f, -0.5f,
+                // V6
+                -0.5f , -0.5f, -0.5f,
+                // V7
+                0.5f , -0.5f, -0.5f,
+        };
+
+
         boundingMesh = new Mesh(positions, null, colours, null, indices);
         boundingBox = new BoundingBox(boundingMesh, new Vector3f(position.x, position.y, position.z));
         boundingBox.setScale(0.1f);
+
+
+        awarenessMesh = new Mesh(awarenessCubePositions, null, colours, null, indices);
+        awarenessBox = new BoundingBox(awarenessMesh, new Vector3f(position.x, position.y, position.z));
+        awarenessBox.setScale(1f);
     }
 
 
@@ -112,6 +155,119 @@ public class Grass extends Plant {
 
     @Override
     public void update() {
+        switch (Hud.gameSpeed){
+            case 1:
+                growthTime = 60;
+                break;
+            case 2:
+                growthTime = 40;
+                break;
+            case 3:
+                growthTime = 20;
+                break;
+
+            default:
+                growthTime = 60;
+                break;
+        }
+
+
+        elapsedTime = System.currentTimeMillis() - startTime;
+        elapsedSeconds = elapsedTime / 1000;
+
+        //add new grass if enough time has passed
+        if(intersectingGrassObjects.size() < 5 && elapsedSeconds > growthTime){
+            Vector3f spawnPosition = calculateSpawnWithinAwarenessBox();
+            try {
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            Grass g = null;
+            try {
+                g = new Grass(scene, terrain, offSpringMesh, new Vector3f(spawnPosition.x, terrain.getHeight(new Vector3f(spawnPosition.x, spawnPosition.y, spawnPosition.z)), spawnPosition.x));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            scene.addStaticGameItem(g);
+//            scene.addBoundingBox(g.getBoundingBox());
+            scene.addBoundingBox(g.getAwarenessBox());
+            startTime = System.currentTimeMillis();
+            elapsedTime = 0;
+            elapsedSeconds = 0;
+        }
+    }
+
+
+    public Vector3f calculateSpawnWithinAwarenessBox(){
+        Random random = new Random();
+        float xMin = awarenessBox.getMesh().getMinX() * awarenessBox.getScale() + position.x;
+        float xMax = awarenessBox.getMesh().getMaxX() * awarenessBox.getScale() + position.x;
+        float xDest = (random.nextFloat() * (xMax - xMin) + xMin);
+        float yMin = awarenessBox.getMesh().getMinY() * awarenessBox.getScale() + position.y;
+        float yMax = awarenessBox.getMesh().getMaxY() * awarenessBox.getScale() + position.y;
+        float yDest = (random.nextFloat() * (yMax - yMin) + yMin);
+        float zMin = awarenessBox.getMesh().getMinZ() * awarenessBox.getScale() + position.z;
+        float zMax = awarenessBox.getMesh().getMaxZ() * awarenessBox.getScale() + position.z;
+        float zDest = (random.nextFloat() * (zMax - zMin) + zMin);
+
+        Vector3f potentialLocation = new Vector3f(xDest, yDest, zDest);
+        if(checkOutOfBounds(potentialLocation)){
+            calculateSpawnWithinAwarenessBox();
+        }
+
+        return potentialLocation;
+    }
+
+    public boolean checkOutOfBounds(Vector3f vector3f){
+        if(terrain == null){
+            return false;
+        }
+        if(vector3f.x > terrain.getTopLeftX() + terrain.getBoundingWidth()){
+            System.out.println("grass beyond MaxX");
+            return true;
+        }
+
+        if(vector3f.x < terrain.getTopLeftX()){
+            System.out.println("grass beyond MinX");
+            return true;
+        }
+
+        if(vector3f.z > terrain.getTopLeftZ() + terrain.getBoundingLength()){
+            System.out.println("grass beyond MaxZ");
+            return true;
+        }
+
+        if(vector3f.z < terrain.getTopLeftZ()){
+            System.out.println("grass beyond MinZ");
+            return true;
+        }
+        return false;
+    }
+
+    public boolean boxIntersection(BoundingBox thisBox, BoundingBox otherBox){
+        float f1 = thisBox.getScale();
+        float f2 = otherBox.getScale();
+        return (thisBox.getMesh().getMinX() * f1 + thisBox.getPosition().x <= otherBox.getMesh().getMaxX() * f2 + otherBox.getPosition().x && thisBox.getMesh().getMaxX() * f1 + thisBox.getPosition().x >= otherBox.getMesh().getMinX() * f2 + otherBox.getPosition().x) &&
+                (thisBox.getMesh().getMinY() * f1 + thisBox.getPosition().y <= otherBox.getMesh().getMaxY() * f2 + otherBox.getPosition().y && thisBox.getMesh().getMaxY() * f1 + thisBox.getPosition().y >= otherBox.getMesh().getMinY() * f2 + otherBox.getPosition().y) &&
+                (thisBox.getMesh().getMinZ() * f1 + thisBox.getPosition().z <= otherBox.getMesh().getMaxZ() * f2 + otherBox.getPosition().z && thisBox.getMesh().getMaxZ() * f1 + thisBox.getPosition().z >= otherBox.getMesh().getMinZ() * f2 + otherBox.getPosition().z);
+    }
+
+    public void addIntersectingGrassObject(Grass object) {
+        if(intersectingGrassObjects == null){
+            intersectingGrassObjects = new ArrayList<>();
+        }
+        intersectingGrassObjects.add(object);
+    }
+
+    public void removeIntersectingObject(GameItem object) {
+        if(intersectingGrassObjects.contains(object)) {
+            intersectingGrassObjects.remove(object);
+        }
+    }
+
+    public List<Grass> getIntersectingGrassObjects() {
+        return intersectingGrassObjects;
     }
 
     @Override
@@ -160,5 +316,9 @@ public class Grass extends Plant {
     
     public void setFoodValue(float foodValue) {
         this.foodValue = foodValue;
+    }
+
+    public BoundingBox getAwarenessBox() {
+        return awarenessBox;
     }
 }

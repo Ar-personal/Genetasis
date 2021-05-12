@@ -10,6 +10,9 @@ public abstract class Plant extends StaticGameItem {
         super(mesh);
     }
 
+    public Plant(Mesh[] meshes) {
+        super(meshes);
+    }
 
     @Override
     public abstract void update();

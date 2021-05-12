@@ -4,7 +4,6 @@ import engine.graphics.Material;
 import engine.graphics.Mesh;
 import engine.utils.FontTexture;
 import engine.utils.Utils;
-import main.Hud;
 
 import java.util.ArrayList;
 import java.util.List;

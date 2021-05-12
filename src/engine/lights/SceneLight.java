@@ -1,4 +1,4 @@
-package engine.graphics;
+package engine.lights;
 
 import org.joml.Vector3f;
 
@@ -6,11 +6,11 @@ public class SceneLight {
 
     private Vector3f ambientLight;
 
+    private Vector3f skyBoxLight;
+
     private PointLight[] pointLightList;
 
     private SpotLight[] spotLightList;
-
-    private Vector3f skyBoxLight;
 
     private DirectionalLight directionalLight;
 
@@ -53,4 +53,5 @@ public class SceneLight {
     public void setSkyBoxLight(Vector3f skyBoxLight) {
         this.skyBoxLight = skyBoxLight;
     }
+
 }

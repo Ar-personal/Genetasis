@@ -1,4 +1,4 @@
-package main;
+package engine.hud;
 
 import engine.graphics.Window;
 import engine.utils.Utils;
@@ -18,10 +18,12 @@ public class EntityHud extends Hud {
     protected float size;
     protected float speed;
     protected float awarenessScale;
+    protected float maxSize;
     protected int health = 0;
     protected int stamina;
     protected int energy;
-    protected float marginLeft = 100f, marginTop = 200f, textPadding = 28f, windowHeight = 300f, windowWidth, barHeight = textPadding - 5f, barY = marginTop + textPadding + 10f;
+    protected float marginLeft = 100f, marginTop = 200f, textPadding = 28f, windowHeight = 320f, windowWidth, barHeight = textPadding - 5f, barY = marginTop + textPadding + 10f;
+    protected boolean male;
 
 
     public void init(Window window) throws Exception {
@@ -49,6 +51,8 @@ public class EntityHud extends Hud {
         float hungerRatio = hunger / maxHunger;
         float maxHungerRatio = (windowWidth - (textPadding * 2)) / maxHunger;
         float newRatio = hunger / maxHungerRatio;
+        float f1 = size / maxSize * 100;
+//        float sizePercentage =  (1f - f1) * 100f;
 
 
         nvgBeginPath(vg);
@@ -83,14 +87,20 @@ public class EntityHud extends Hud {
         nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 2, "Hunger: " + String.format("%.2f", hunger) + " / " + (int) maxHunger);
 
         nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 3, "thirst: " + thirst);
-        nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 4, "Size: " + size);
+        nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 4, "Growth: " + String.format("%.2f", f1) + "%");
         nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 5, "Energy: " + energy);
         nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 6, "Stamina: " + stamina);
         nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 7, "Speed: " + speed);
         nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 8, "Health : " + health);
         nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 9, "Awareness : " + awareness);
-
-
+        String sex = "";
+        if(male){
+            sex = "male";
+        }else{
+            sex = "female";
+        }
+        nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 10, "Sex : " + sex);
+        nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 11, "Size : " + size);
 
 
         nvgEndFrame(vg);
@@ -107,6 +117,14 @@ public class EntityHud extends Hud {
         colour.a(a / 255f);
 
         return colour;
+    }
+
+    public float getMaxSize() {
+        return maxSize;
+    }
+
+    public void setMaxSize(float maxSize) {
+        this.maxSize = maxSize;
     }
 
     public float getAwareness() {
@@ -187,5 +205,13 @@ public class EntityHud extends Hud {
 
     public void setEnergy(int energy) {
         this.energy = energy;
+    }
+
+    public boolean isMale() {
+        return male;
+    }
+
+    public void setMale(boolean male) {
+        this.male = male;
     }
 }

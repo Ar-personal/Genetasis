@@ -9,6 +9,10 @@ public abstract class StaticGameItem extends GameItem {
         super(mesh);
     }
 
+    public StaticGameItem(Mesh[] meshes) {
+        super(meshes);
+    }
+
     public abstract Vector3f getPosition();
 
     public abstract void setPosition(float x, float y, float z);
