@@ -286,9 +286,9 @@ public class Scene {
 
 
     public void cleanup() {
-        for (Mesh mesh : meshMap.keySet()) {
-            mesh.cleanUp();
-        }
+//        for (Mesh mesh : meshMap.keySet()) {
+//            mesh.cleanUp();
+//        }
     }
 
     public void addTiger(Vector3f spawnLocation, boolean newAdd, Tiger mother, Tiger father){
