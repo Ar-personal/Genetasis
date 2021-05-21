@@ -18,7 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-import static org.lwjglx.BufferUtils.createByteBuffer;
+import static org.lwjgl.BufferUtils.createByteBuffer;
+
 
 public class Utils {
 
@@ -87,7 +88,7 @@ public class Utils {
         Path path = Paths.get(resource);
         if (Files.isReadable(path)) {
             try (SeekableByteChannel fc = Files.newByteChannel(path)) {
-                buffer = BufferUtils.createByteBuffer((int) fc.size() + 1);
+                buffer = createByteBuffer((int) fc.size() + 1);
                 while (fc.read(buffer) != -1) ;
             }
         } else {
@@ -113,7 +114,7 @@ public class Utils {
     }
 
     private static ByteBuffer resizeBuffer(ByteBuffer buffer, int newCapacity) {
-        ByteBuffer newBuffer = BufferUtils.createByteBuffer(newCapacity);
+        ByteBuffer newBuffer = createByteBuffer(newCapacity);
         buffer.flip();
         newBuffer.put(buffer);
         return newBuffer;

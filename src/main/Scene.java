@@ -381,8 +381,8 @@ public class Scene {
 
     public Vector3f randomSpawn(){
         Random r = new Random();
-        float x = r.nextFloat() * 33f - 10f;
-        float z = r.nextFloat() * 33f - 10f;
+        float x = r.nextFloat() * 30f - 10f;
+        float z = r.nextFloat() * 30f - 10f;
         float y = r.nextFloat();
         //10f for world offset
         Vector3f vec = new Vector3f(x, 1f , z);

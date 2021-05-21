@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component inherit-compiler-output="true" inheritJdk="true">
+	<output-test url="file://$MODULE_DIR$/out/test/Glevolution"/>
+	<exclude-output/>
+	<contentEntry url="file://$MODULE_DIR$"/>
+	<levels>
+		<level name="joml-primitives-1.10.0" value="project"/>
+		<level name="jcommon-1.0.23" value="project"/>
+		<level name="joml-1.10.0" value="project"/>
+		<level name="jfreechart-1.0.19" value="project"/>
+		<level name="libs" value="project"/>
+	</levels>
+</component>

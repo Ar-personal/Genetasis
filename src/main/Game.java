@@ -2,7 +2,6 @@ package main;
 
 import engine.charts.BarChart;
 import engine.charts.LineChart;
-import engine.charts.PieChart;
 import engine.entities.*;
 import engine.graphics.*;
 import engine.lights.DirectionalLight;
@@ -11,14 +10,11 @@ import engine.lights.SceneLight;
 import engine.lights.SpotLight;
 import engine.terrain.Camera;
 import engine.terrain.Terrain;
-import engine.utils.OBJLoader;
-import engine.utils.StaticMeshesLoader;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -139,12 +135,12 @@ public class Game implements IGameLogic {
             scene.addDeer(null, false, null, null);
         }
 //
-        for(int i = 0; i < 20; i++) {
+        for(int i = 0; i < 25; i++) {
             scene.addTiger(null, false, null, null);
         }
 //
 
-        for(int i = 0; i < 400; i++) {
+        for(int i = 0; i < 300; i++) {
             scene.addGrass();
         }
 

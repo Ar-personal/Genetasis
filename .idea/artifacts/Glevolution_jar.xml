@@ -1,0 +1,15 @@
+<component name="ArtifactManager">
+  <artifact build-on-make="true" name="Glevolution:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Glevolution_jar</output-path>
+    <root id="root">
+      <element id="archive" name="Glevolution.jar">
+        <element id="module-output" name="Glevolution" />
+      </element>
+      <element id="library" level="project" name="jfreechart-1.0.19" />
+      <element id="library" level="module" name="joml-primitives-1.10.0.jar" module-name="Glevolution" />
+      <element id="library" level="project" name="joml-1.10.0" />
+      <element id="library" level="project" name="jcommon-1.0.23" />
+      <element id="library" level="project" name="libs" />
+    </root>
+  </artifact>
+</component>
