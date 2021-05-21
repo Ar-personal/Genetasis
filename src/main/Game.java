@@ -131,16 +131,16 @@ public class Game implements IGameLogic {
 
         }
 //
-        for(int i = 0; i < 40; i++) {
+        for(int i = 0; i < 30; i++) {
             scene.addDeer(null, false, null, null);
         }
 //
-        for(int i = 0; i < 25; i++) {
+        for(int i = 0; i < 15; i++) {
             scene.addTiger(null, false, null, null);
         }
 //
 
-        for(int i = 0; i < 300; i++) {
+        for(int i = 0; i < 200; i++) {
             scene.addGrass();
         }
 

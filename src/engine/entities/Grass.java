@@ -183,7 +183,7 @@ public class Grass extends Plant {
 
 
         //add new grass if enough time has passed
-        if(elapsedSeconds > growthTime){
+        if(elapsedSeconds > growthTime && intersectingGrassObjects.size() < 4){
             Vector3f spawnPosition = calculateSpawnWithinAwarenessBox();
 
             Grass g = new Grass(scene, terrain, offSpringMesh, new Vector3f(spawnPosition.x, terrain.getHeight(new Vector3f(spawnPosition.x, spawnPosition.y, spawnPosition.z)), spawnPosition.z));

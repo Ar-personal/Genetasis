@@ -37,7 +37,7 @@ public class EntityHud extends Hud {
             throw new Exception("Could not init nanovg");
         }
 
-        fontBuffer = Utils.ioResourceToByteBuffer("C:\\Users\\Alex\\Dropbox\\Game Design\\Genetasis\\resources\\fonts\\OpenSans-Bold.ttf", 150 * 1024);
+        fontBuffer = Utils.ioResourceToByteBuffer("/fonts/OpenSans-Bold.ttf", 150 * 1024);
         int font = nvgCreateFontMem(vg, FONT_NAME, fontBuffer, 0);
         if (font == -1) {
             throw new Exception("Could not add font");
