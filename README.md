@@ -1,7 +1,7 @@
 # Genetasis
 A Game/Emulation based upon the concepts of a genetic algorithm built in Java and openGL with LWJGL
 
-Clone from the GutHub into preferably IntelliJ IDE
+Clone from the GitHub into preferably IntelliJ IDE
 
 When running the simulation several graphs will open stacked ontop of each other, drag them elsewhere, preferably to a second monitor to see them all.
 Graphs can be resized and the potting area can be dragged to adjust ranges.
