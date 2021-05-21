@@ -5,7 +5,7 @@ Setup:
 
 Clone from the GitHub into preferably IntelliJ IDE
 Creat new configutation > java application > main class = main.Main > build and run
-
+Make sure contents root is set to genetasis and resources root is set to resources folder
 
 When running the simulation several graphs will open stacked ontop of each other, drag them elsewhere, preferably to a second monitor to see them all.
 Graphs can be resized and the potting area can be dragged to adjust ranges.
