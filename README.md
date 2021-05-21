@@ -1,6 +1,9 @@
 # Genetasis
 A Game/Emulation based upon the concepts of a genetic algorithm built in Java and openGL with LWJGL
 
+![image](https://user-images.githubusercontent.com/45834916/119137830-26b17b80-ba39-11eb-932b-16a8a756ba99.png)
+
+
 Download the project jar file under 'releases' tag on this repository
 
 or
