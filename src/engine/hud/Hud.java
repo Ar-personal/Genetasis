@@ -1,12 +1,10 @@
 package engine.hud;
 
 import engine.graphics.Window;
-import engine.hud.EntityHud;
 import engine.utils.Utils;
 import main.MouseInput;
 import org.lwjgl.nanovg.NVGColor;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjglx.input.Mouse;
 
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
