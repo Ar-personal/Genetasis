@@ -25,10 +25,6 @@ public class Bush extends Plant {
         return 0;
     }
 
-    @Override
-    public void setFoodValue(float foodValue) {
-
-    }
 
     @Override
     public void setPosition(float x, float y, float z) {

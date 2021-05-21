@@ -1,5 +1,6 @@
 package engine.hud;
 
+import engine.entities.GameItem;
 import engine.graphics.Window;
 import engine.utils.Utils;
 import org.lwjgl.nanovg.NVGColor;
@@ -11,18 +12,21 @@ import static org.lwjgl.nanovg.NanoVG.nvgFill;
 import static org.lwjgl.nanovg.NanoVGGL2.*;
 
 public class EntityHud extends Hud {
+
+    protected String gameItemType;
+
     protected float awareness = 1f;
     protected float hunger = 20f;
     protected float maxHunger;
-    protected int thirst = 0;
+    protected int thirst = 0, generation;
     protected float size;
-    protected float speed;
+    protected float speed, maxSpeed;
     protected float awarenessScale;
     protected float maxSize;
     protected int health = 0;
     protected int stamina;
-    protected int energy;
-    protected float marginLeft = 100f, marginTop = 200f, textPadding = 28f, windowHeight = 320f, windowWidth, barHeight = textPadding - 5f, barY = marginTop + textPadding + 10f;
+    protected float energy, maxEnergy;
+    protected float marginLeft = 100f, marginTop = 200f, textPadding = 28f, windowHeight = 350f, windowWidth, barHeight = textPadding - 5f, barY = marginTop + textPadding + 10f;
     protected boolean male;
 
 
@@ -65,15 +69,15 @@ public class EntityHud extends Hud {
         nvgFillColor(vg, rgba(22, 25, 30, 155, colour));
 
         nvgFontSize(vg, 26f);
-        nvgText(vg, marginLeft + textPadding, marginTop + textPadding, "Entity Type: Deer");
+        nvgText(vg, marginLeft + textPadding, marginTop + textPadding, "Entity Type: " + gameItemType);
 
-        //red bar
+        //red hunger bar
         nvgBeginPath(vg);
         nvgFillColor(vg, rgba(255, 43, 28, 150, colour));
         nvgRect(vg, marginLeft + textPadding, marginTop + (textPadding + 10f), windowWidth - (textPadding * 2), barHeight);
         nvgFill(vg);
 
-        //green bar
+        //green hunger bar
         nvgBeginPath(vg);
         nvgFillColor(vg, rgba(121, 255, 43, 150, colour));
         nvgRect(vg, marginLeft + textPadding, marginTop + (textPadding + 10f), hunger, barHeight);
@@ -88,9 +92,29 @@ public class EntityHud extends Hud {
 
         nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 3, "thirst: " + thirst);
         nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 4, "Growth: " + String.format("%.2f", f1) + "%");
-        nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 5, "Energy: " + energy);
+
+        //red energy bar
+        nvgBeginPath(vg);
+        nvgFillColor(vg, rgba(255, 43, 28, 150, colour));
+        nvgRect(vg, marginLeft + textPadding, marginTop + (textPadding + 93f), windowWidth - (textPadding * 2), barHeight);
+        nvgFill(vg);
+
+        //green energy bar
+        nvgBeginPath(vg);
+        nvgFillColor(vg, rgba(245, 215, 66, 150, colour));
+        nvgRect(vg, marginLeft + textPadding, marginTop + (textPadding + 93f), energy, barHeight);
+        nvgFill(vg);
+
+        nvgBeginPath(vg);
+        nvgFillColor(vg, rgba(22, 25, 30, 155, colour));
+
+        //overlay
+        nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 5, "Energy: " + String.format("%.2f", energy) + " / " + String.format("%.2f", maxEnergy));
+
+
+
         nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 6, "Stamina: " + stamina);
-        nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 7, "Speed: " + speed);
+        nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 7, "Max Speed: " + String.format("%.3f", maxSpeed));
         nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 8, "Health : " + health);
         nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 9, "Awareness : " + awareness);
         String sex = "";
@@ -100,7 +124,8 @@ public class EntityHud extends Hud {
             sex = "female";
         }
         nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 10, "Sex : " + sex);
-        nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 11, "Size : " + size);
+        nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 11, "Size : " + String.format("%.6f", size));
+        nvgText(vg, marginLeft + textPadding, marginTop + textPadding * 12, "Generation : " + generation);
 
 
         nvgEndFrame(vg);
@@ -199,12 +224,20 @@ public class EntityHud extends Hud {
         this.stamina = stamina;
     }
 
-    public int getEnergy() {
+    public float getEnergy() {
         return energy;
     }
 
-    public void setEnergy(int energy) {
+    public void setEnergy(float energy) {
         this.energy = energy;
+    }
+
+    public float getMaxEnergy() {
+        return maxEnergy;
+    }
+
+    public void setMaxEnergy(float maxEnergy) {
+        this.maxEnergy = maxEnergy;
     }
 
     public boolean isMale() {
@@ -213,5 +246,26 @@ public class EntityHud extends Hud {
 
     public void setMale(boolean male) {
         this.male = male;
+    }
+
+
+    public void setGameItemType(GameItem gameItemType) {
+        this.gameItemType = gameItemType.getClass().getSimpleName();
+    }
+
+    public int getGeneration() {
+        return generation;
+    }
+
+    public void setGeneration(int generation) {
+        this.generation = generation;
+    }
+
+    public float getMaxSpeed() {
+        return maxSpeed;
+    }
+
+    public void setMaxSpeed(float maxSpeed) {
+        this.maxSpeed = maxSpeed;
     }
 }

@@ -1,4 +1,4 @@
-//package engine.objects;
+//package engine.terrain;
 //
 //import engine.entities.BoundingBox;
 //import engine.entities.StaticGameItem;

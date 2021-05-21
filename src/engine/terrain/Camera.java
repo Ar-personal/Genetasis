@@ -1,4 +1,4 @@
-package engine.objects;
+package engine.terrain;
 
 import main.Transformation;
 import org.joml.Matrix4f;

@@ -2,7 +2,7 @@ package main;
 
 import engine.entities.GameItem;
 import engine.graphics.Window;
-import engine.objects.Camera;
+import engine.terrain.Camera;
 import org.joml.Matrix4f;
 import org.joml.Vector2d;
 import org.joml.Vector3f;

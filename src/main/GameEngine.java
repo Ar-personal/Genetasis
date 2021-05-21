@@ -6,9 +6,9 @@ import main.Timer;
 
 public class GameEngine implements Runnable {
 
-    public static final int TARGET_FPS = 75;
+    public static int TARGET_FPS;
 
-    public static final int TARGET_UPS = 30;
+    public static int TARGET_UPS;
 
     private final Window window;
 
@@ -31,6 +31,17 @@ public class GameEngine implements Runnable {
         mouseInput = new MouseInput();
         this.gameLogic = gameLogic;
         timer = new Timer();
+
+
+        if(opts.unlockFrameRate){
+            TARGET_FPS = 75 * opts.updateAmt;
+
+            TARGET_UPS = 30 * opts.updateAmt;
+        }else{
+            TARGET_FPS = 75;
+
+            TARGET_UPS = 30;
+        }
     }
 
     @Override
@@ -52,7 +63,7 @@ public class GameEngine implements Runnable {
         mouseInput.init(window);
     }
 
-    protected void gameLoop() {
+    protected void gameLoop() throws Exception {
         float elapsedTime;
         float accumulator = 0f;
         float interval = 1f / TARGET_UPS;
@@ -93,7 +104,7 @@ public class GameEngine implements Runnable {
         gameLogic.input(window, mouseInput);
     }
 
-    protected void update(float interval) {
+    protected void update(float interval) throws Exception {
         gameLogic.update(interval, mouseInput, window);
     }
 

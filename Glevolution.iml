@@ -39,5 +39,7 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" exported="" name="jcommon-1.0.23" level="project" />
+    <orderEntry type="library" exported="" name="jfreechart-1.0.19" level="project" />
   </component>
 </module>

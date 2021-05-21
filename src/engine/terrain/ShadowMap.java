@@ -1,4 +1,4 @@
-package engine.graphics;
+package engine.terrain;
 
 import main.Texture;
 

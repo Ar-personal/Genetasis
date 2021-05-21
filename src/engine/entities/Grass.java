@@ -1,13 +1,13 @@
 package engine.entities;
 
 import engine.graphics.Mesh;
+import engine.hud.EntityHud;
 import engine.hud.Hud;
-import engine.objects.Terrain;
+import engine.terrain.Terrain;
 import engine.utils.OBJLoader;
 import main.Scene;
 import org.joml.Random;
 import org.joml.Vector3f;
-import org.lwjgl.system.CallbackI;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,14 +16,17 @@ public class Grass extends Plant {
 
     protected Scene scene;
     protected Terrain terrain;
-    protected Mesh mesh, boundingMesh, awarenessMesh, offSpringMesh = new OBJLoader().loadMesh("/models/grass.obj", new Vector3f(50, 200, 200), false);;
+    protected EntityHud hud;
+    protected Mesh mesh, boundingMesh, awarenessMesh, offSpringMesh = new OBJLoader().loadMesh("/models/grass.obj", new Vector3f(50, 255, 50), false);
     protected Vector3f position;
     protected Vector3f rotation = new Vector3f();
     protected float[] awarenessCubePositions;
     protected List<Grass> intersectingGrassObjects = new ArrayList<>();
-    protected int growthTime = 60;
-
-    protected float foodValue = 15f;
+    protected int growthTime = 150;
+    protected int growthDefault = 150;
+    protected float size, maxSize = 0.1f, growth;
+    protected float growthAmt = 0.0001f;
+    protected float foodValue = 30f;
     protected long startTime, elapsedTime, elapsedSeconds;
 
     protected BoundingBox boundingBox, awarenessBox;
@@ -39,6 +42,8 @@ public class Grass extends Plant {
     }
 
     public void init(){
+        size = scale;
+
         startTime = System.currentTimeMillis();
         float[] positions = new float[]{
 
@@ -114,84 +119,78 @@ public class Grass extends Plant {
 
         awarenessMesh = new Mesh(awarenessCubePositions, null, colours, null, indices);
         awarenessBox = new BoundingBox(awarenessMesh, new Vector3f(position.x, position.y, position.z));
-        awarenessBox.setScale(1f);
+        awarenessBox.setScale(3f);
     }
 
 
-    @Override
-    public Mesh getMesh() {
-        return mesh;
-    }
+
 
     @Override
-    public void setMesh(Mesh mesh) {
-        this.mesh = mesh;
-    }
-
-    @Override
-    public Vector3f getPosition() {
-        return position;
-    }
-
-    @Override
-    public void setPosition(float x, float y, float z) {
-        position = new Vector3f(x, y, z);
-    }
-
-    @Override
-    public float getScale() {
-        return scale;
-    }
-
-    @Override
-    public void setScale(float scale) {
-        this.scale = scale;
-    }
-
-    @Override
-    public Vector3f getRotation() {
-        return rotation;
-    }
-
-    @Override
-    public void update() {
+    public void update() throws Exception {
         switch (Hud.gameSpeed){
             case 1:
-                growthTime = 60;
+                growthTime = growthDefault;
                 break;
             case 2:
-                growthTime = 40;
+                growthTime = growthDefault / 2;
                 break;
             case 3:
-                growthTime = 20;
+                growthTime = growthDefault / 3;
                 break;
 
             default:
-                growthTime = 60;
+                growthTime = growthDefault;
                 break;
         }
+
+        if(scene.getWindow().getOpts().unlockFrameRate){
+            growthTime = growthTime / scene.getWindow().getOpts().updateAmt;
+        }
+
+
+        if(isSelected() || boundingBox.isSelected() || awarenessBox.selected){
+            System.out.println(growth);
+            hud.setGameItemType(this);
+            hud.setAwareness(3f);
+            hud.setHealth(1);
+            hud.setHunger(1);
+            hud.setMaxHunger(1);
+            hud.setSize(scale);
+            hud.setStamina(1);
+            hud.setThirst(1);
+            hud.setSpeed(1);
+            hud.setMaxSpeed(1);
+            hud.setEnergy(1);
+            hud.setMaxEnergy(1);
+            hud.setMale(false);
+            hud.setMaxSize(maxSize);
+            hud.setGeneration(1);
+        }
+
+
+        if(scale < maxSize){
+            scale += growthAmt;
+            if(scale > maxSize) {
+                scale = maxSize;
+            }
+        }
+
+        growth = scale / maxSize * 100;
 
 
         elapsedTime = System.currentTimeMillis() - startTime;
         elapsedSeconds = elapsedTime / 1000;
 
-        //add new grass if enough time has passed
-        if(intersectingGrassObjects.size() < 5 && elapsedSeconds > growthTime){
-            Vector3f spawnPosition = calculateSpawnWithinAwarenessBox();
-            try {
 
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            Grass g = null;
-            try {
-                g = new Grass(scene, terrain, offSpringMesh, new Vector3f(spawnPosition.x, terrain.getHeight(new Vector3f(spawnPosition.x, spawnPosition.y, spawnPosition.z)), spawnPosition.x));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        //add new grass if enough time has passed
+        if(elapsedSeconds > growthTime){
+            Vector3f spawnPosition = calculateSpawnWithinAwarenessBox();
+
+            Grass g = new Grass(scene, terrain, offSpringMesh, new Vector3f(spawnPosition.x, terrain.getHeight(new Vector3f(spawnPosition.x, spawnPosition.y, spawnPosition.z)), spawnPosition.z));
+            g.setScale(0.00001f);
             scene.addStaticGameItem(g);
 //            scene.addBoundingBox(g.getBoundingBox());
-            scene.addBoundingBox(g.getAwarenessBox());
+//            scene.addBoundingBox(g.getAwarenessBox());
             startTime = System.currentTimeMillis();
             elapsedTime = 0;
             elapsedSeconds = 0;
@@ -287,6 +286,41 @@ public class Grass extends Plant {
         this.position = position;
     }
 
+    @Override
+    public Mesh getMesh() {
+        return mesh;
+    }
+
+    @Override
+    public void setMesh(Mesh mesh) {
+        this.mesh = mesh;
+    }
+
+    @Override
+    public Vector3f getPosition() {
+        return position;
+    }
+
+    @Override
+    public void setPosition(float x, float y, float z) {
+        position = new Vector3f(x, y, z);
+    }
+
+    @Override
+    public float getScale() {
+        return scale;
+    }
+
+    @Override
+    public void setScale(float scale) {
+        this.scale = scale;
+    }
+
+    @Override
+    public Vector3f getRotation() {
+        return rotation;
+    }
+
     public void setRotation(Vector3f rotation) {
         this.rotation = rotation;
     }
@@ -320,5 +354,21 @@ public class Grass extends Plant {
 
     public BoundingBox getAwarenessBox() {
         return awarenessBox;
+    }
+
+    public EntityHud getHud() {
+        return hud;
+    }
+
+    public void setHud(EntityHud hud) {
+        this.hud = hud;
+    }
+
+    public float getMaxSize() {
+        return maxSize;
+    }
+
+    public void setMaxSize(float maxSize) {
+        this.maxSize = maxSize;
     }
 }

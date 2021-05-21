@@ -1,7 +1,6 @@
 package engine.entities;
 
 import engine.graphics.Mesh;
-import maths.Vector3f;
 
 public abstract class Plant extends StaticGameItem {
 
@@ -15,9 +14,8 @@ public abstract class Plant extends StaticGameItem {
     }
 
     @Override
-    public abstract void update();
+    public abstract void update() throws Exception;
 
     public abstract float getFoodValue();
 
-    public abstract void setFoodValue(float foodValue);
 }

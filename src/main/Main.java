@@ -1,5 +1,6 @@
 package main;
 
+import engine.charts.PieChart;
 import engine.graphics.Window;
 
 public class Main {
@@ -13,9 +14,12 @@ public class Main {
             opts.showFps = true;
             opts.compatibleProfile = true;
             opts.antialiasing = true;
-            opts.showTriangles = true;
+            opts.showTriangles = false;
+            opts.unlockFrameRate = false;
+            opts.updateAmt = 10;
             GameEngine gameEng = new GameEngine("GAME", vSync, opts, gameLogic);
             gameEng.run();
+
         } catch (Exception excp) {
             excp.printStackTrace();
             System.exit(-1);

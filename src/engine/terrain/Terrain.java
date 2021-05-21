@@ -1,16 +1,10 @@
-package engine.objects;
+package engine.terrain;
 
+import engine.entities.BoundingBox;
 import engine.entities.TerrainItem;
-import engine.graphics.HeightMapMesh;
-import engine.graphics.PerlinNoise;
 import engine.entities.StaticGameItem;
+import engine.graphics.Mesh;
 import org.joml.Vector3f;
-import org.lwjgl.system.MemoryStack;
-
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-
-import static org.lwjgl.stb.STBImage.*;
 
 public class Terrain {
 
@@ -23,6 +17,8 @@ public class Terrain {
     private final int verticesPerRow;
 
     private final HeightMapMesh heightMapMesh;
+    private BoundingBox boundingBox;
+    private Mesh boundingMesh;
 
     private float minY;
 
@@ -53,7 +49,57 @@ public class Terrain {
         float amplitude = 0.3f;
         float[][] heights = generateHeights(width, new PerlinNoise(6, 0.40f, 0.55f));
         heightMapMesh = new HeightMapMesh(minY, maxY, heights, width, height, textInc, amplitude);
+        Mesh mesh = heightMapMesh.getMesh();
+        float[] positions = new float[]{
 
+                mesh.getMinX(), mesh.getMaxY(), mesh.getMaxZ(),
+                // V1
+                mesh.getMinX(), mesh.getMinY(), mesh.getMaxZ(),
+                // V2
+                mesh.getMaxX(), mesh.getMinY(), mesh.getMaxZ(),
+                // V3
+                mesh.getMaxX(), mesh.getMaxY(), mesh.getMaxZ(),
+                // V4
+                mesh.getMinX(), mesh.getMaxY(), mesh.getMinZ(),
+                // V5
+                mesh.getMaxX(), mesh.getMaxY(), mesh.getMinZ(),
+                // V6
+                mesh.getMinX(), mesh.getMinY(), mesh.getMinZ(),
+                // V7
+                mesh.getMaxX(), mesh.getMinY(), mesh.getMinZ(),
+        };
+
+
+
+        float[] colours = new float[]{
+                0.5f, 0.0f, 0.0f,
+                0.0f, 0.5f, 0.0f,
+                0.0f, 0.0f, 0.5f,
+                0.0f, 0.5f, 0.5f,
+                0.5f, 0.0f, 0.0f,
+                0.0f, 0.5f, 0.0f,
+                0.0f, 0.0f, 0.5f,
+                0.0f, 0.5f, 0.5f,
+        };
+
+        int[] indices = new int[]{
+                // Front face
+                0, 1, 3, 3, 1, 2,
+                // Top Face
+                4, 0, 3, 5, 4, 3,
+                // Right face
+                3, 2, 7, 5, 3, 7,
+                // Left face
+                6, 1, 0, 6, 0, 4,
+                // Bottom face
+                2, 1, 6, 2, 6, 7,
+                // Back face
+                7, 6, 4, 7, 4, 5,
+        };
+
+        boundingMesh = new Mesh(positions, null, colours, null, indices);
+        boundingBox = new BoundingBox(boundingMesh, new Vector3f(-10, 0, -10));
+        boundingBox.setScale(scale);
 
 
         boundingBoxes = new Box2D[terrainSize][terrainSize];
@@ -169,6 +215,13 @@ public class Terrain {
         return y;
     }
 
+    public BoundingBox getBoundingBox() {
+        return boundingBox;
+    }
+
+    public void setBoundingBox(BoundingBox boundingBox) {
+        this.boundingBox = boundingBox;
+    }
 
     /**
      * Gets the bounding box of a terrain block

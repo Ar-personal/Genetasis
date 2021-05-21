@@ -26,9 +26,5 @@ public abstract class DynamicGameItem extends GameItem {
     @Override
     public abstract void update();
 
-    public abstract Mesh getMesh();
-
-    public abstract void setMesh(Mesh mesh);
-
 
 }

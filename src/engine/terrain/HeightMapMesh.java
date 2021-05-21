@@ -1,22 +1,15 @@
-package engine.graphics;
+package engine.terrain;
 
-import de.matthiasmann.twl.utils.PNGDecoder;
+import engine.graphics.Colour;
+import engine.graphics.Material;
+import engine.graphics.Mesh;
 import engine.utils.Maths;
 import engine.utils.Utils;
-import main.Texture;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
-import org.lwjgl.system.CallbackI;
-import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-
-import static org.lwjgl.stb.STBImage.*;
-import static org.lwjglx.opengl.Display.getWidth;
 
 public class HeightMapMesh {
 
@@ -253,8 +246,7 @@ public class HeightMapMesh {
         System.out.println("indices length: " + indicesArr.length + " colors length: " + floatColour.length + " heightlist length: " + " positions length: " + posArr.length + " height array length: ");
 
 
-        this.mesh = new Mesh(posArr, texCoordsArr, floatColour, normalsArr, indicesArr);
-        this.mesh.setMaterial(null);
+        this.mesh = new Mesh(posArr, floatColour, floatColour, normalsArr, indicesArr);
     }
 
     //textureless terrain with heightmap file
@@ -520,4 +512,8 @@ public class HeightMapMesh {
 //        return Colour.interpolateColours(biomeColours[firstBiome], biomeColours[firstBiome + 1], blend, null);
 //    }
 
+
+    public void setMesh(Mesh mesh) {
+        this.mesh = mesh;
+    }
 }

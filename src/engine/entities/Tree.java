@@ -199,8 +199,4 @@ public class Tree extends Plant {
         return 0;
     }
 
-    @Override
-    public void setFoodValue(float foodValue) {
-
-    }
 }

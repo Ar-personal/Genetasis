@@ -1,10 +1,10 @@
 package main;
 
+import engine.entities.Animal;
 import engine.entities.Deer;
 import engine.entities.GameItem;
 import engine.entities.TerrainItem;
-import engine.objects.Camera;
-import engine.objects.Terrain;
+import engine.terrain.Camera;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.primitives.Intersectionf;
@@ -39,7 +39,7 @@ public class CameraBoxSelectionDetector {
 
         for (GameItem gameItem : gameItems) {
             if(!(gameItem instanceof TerrainItem)) {
-                if(!(gameItem instanceof Deer)){
+                if(!(gameItem instanceof Animal)){
                     gameItem.setSelected(false);
                     min.set(gameItem.getPosition());
                     max.set(gameItem.getPosition());

@@ -24,7 +24,7 @@ public abstract class StaticGameItem extends GameItem {
     public abstract Vector3f getRotation();
 
     @Override
-    public abstract void update();
+    public abstract void update() throws Exception;
 
     public abstract void setRotation(float x, float y, float z);
 }

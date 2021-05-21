@@ -6,17 +6,16 @@ import engine.lights.DirectionalLight;
 import engine.lights.PointLight;
 import engine.lights.SceneLight;
 import engine.lights.SpotLight;
-import engine.objects.Camera;
+import engine.terrain.Camera;
+import engine.terrain.ShadowMap;
 import engine.utils.Utils;
 import main.*;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.*;

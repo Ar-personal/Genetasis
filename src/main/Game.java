@@ -1,18 +1,23 @@
 package main;
 
+import engine.charts.BarChart;
+import engine.charts.LineChart;
+import engine.charts.PieChart;
 import engine.entities.*;
 import engine.graphics.*;
-import engine.hud.Hud;
 import engine.lights.DirectionalLight;
 import engine.lights.PointLight;
 import engine.lights.SceneLight;
 import engine.lights.SpotLight;
-import engine.objects.Camera;
-import engine.objects.Terrain;
+import engine.terrain.Camera;
+import engine.terrain.Terrain;
 import engine.utils.OBJLoader;
+import engine.utils.StaticMeshesLoader;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -48,12 +53,28 @@ public class Game implements IGameLogic {
 
     private float spotInc = 1, angleInc;
 
+    private LineChart lineChart = new LineChart("Entity Count", "number over time");
+    private LineChart awarenessChart = new LineChart("Avg Awareness", "Awareness over time");
+    private LineChart maxHungerChart = new LineChart("Avg Maximum Hunger", "Maximum Hunger over time");
+    private LineChart maxEnergyChart = new LineChart("Avg Maximum Energy", "Maximum Energy over time");
+    private LineChart maxGenerationChart = new LineChart("Generations", "Highest Generation over time");
+
+    private List<LineChart> lineCharts = new ArrayList<>();
+
+    private BarChart genders = new BarChart("Species Gender Quantities", "Categorical Species Genders");
+
+    private List<BarChart> barCharts = new ArrayList<>();
 
     private Tree tree1, house;
     private Bush bush1, bush2, bush3, bush4, bush5, bush6;
     private Grass grass;
 
-    public Game() throws Exception {
+    private long  startTime, simStartTime;
+    private long elapsedSimTime, elapsedSimSeconds, elapsedTime, elapsedSeconds;
+    private int minutes = 0;
+    private int waitAmt;
+
+    public Game(){
         renderer = new Renderer();
         camera = new Camera();
         camera.setPosition(0, 0.5f, 0);
@@ -67,6 +88,36 @@ public class Game implements IGameLogic {
         renderer.init(window);
         selectDetector = new MouseBoxSelectionDetector();
 
+        if(window.getOpts().unlockFrameRate){
+            waitAmt = 1;
+        }else{
+            waitAmt = 60;
+        }
+
+
+        //add all graphs to lists
+        lineCharts.add(lineChart);
+        lineCharts.add(awarenessChart);
+        lineCharts.add(maxEnergyChart);
+        lineCharts.add(maxGenerationChart);
+        lineCharts.add(maxHungerChart);
+
+        barCharts.add(genders);
+
+        for(LineChart c  : lineCharts){
+            c.pack();
+            c.setVisible(true);
+        }
+
+        for(BarChart b  : barCharts){
+            b.pack();
+            b.setVisible(true);
+        }
+
+
+        startTime = System.currentTimeMillis();
+        simStartTime = System.currentTimeMillis();
+        elapsedSimSeconds = waitAmt;
 
         //create and load the terrain
         float terrainScale = 10;
@@ -83,22 +134,27 @@ public class Game implements IGameLogic {
             items[i].setPosition(-10, 0 ,-10);
 
         }
-
-        for(int i = 0; i < 8; i++) {
-            scene.addDeer(null, false);
+//
+        for(int i = 0; i < 40; i++) {
+            scene.addDeer(null, false, null, null);
         }
+//
+        for(int i = 0; i < 20; i++) {
+            scene.addTiger(null, false, null, null);
+        }
+//
 
-        Mesh grassMesh = new OBJLoader().loadMesh("/models/grass.obj", new Vector3f(50, 255, 50), false);
-        for(int i = 0; i < 90; i++) {
-            grass = new Grass(scene, terrain, grassMesh, randomSpawn());
-            grass.setScale(0.1f);
-            scene.addStaticGameItem(grass);
-//            scene.addBoundingBox(grass.getBoundingBox());
+        for(int i = 0; i < 400; i++) {
+            scene.addGrass();
         }
 
         // Setup  GameItems
         float reflectance = 1f;
 
+//        Mesh[] houseMesh = StaticMeshesLoader.load("C:\\Users\\Alex\\Dropbox\\Game Design\\Genetasis\\resources\\models\\house\\farmhouse_obj.obj", "C:\\Users\\Alex\\Dropbox\\Game Design\\Genetasis\\resources\\models\\house");
+//        Tree house = new Tree(houseMesh, randomSpawn());
+//        house.setScale(0.1f);
+//        scene.addStaticGameItem(house)
 
 
 
@@ -152,10 +208,7 @@ public class Game implements IGameLogic {
 //        bush6.setScale(0.5f);
 
 
-//        Mesh[] houseMesh = StaticMeshesLoader.load("C:\\Users\\Alex\\Dropbox\\Game Design\\Genetasis\\resources\\models\\house\\farmhouse_obj.obj", "C:\\Users\\Alex\\Dropbox\\Game Design\\Genetasis\\resources\\models\\house");
-//        Tree house = new Tree(houseMesh, randomSpawn());
-//        house.setScale(0.1f);
-//        scene.addStaticGameItem(house);
+;
 
 
 //        scene.addStaticGameItem(bush4);
@@ -185,17 +238,6 @@ public class Game implements IGameLogic {
         sceneLight.setDirectionalLight(directionalLight);
     }
 
-    public Vector3f randomSpawn(){
-        Random r = new Random();
-        float x = r.nextFloat() * 30f - 10f;
-        float z = r.nextFloat() * 30f - 10f;
-        float y = r.nextFloat();
-        //10f for world offset
-        Vector3f vec = new Vector3f(x, 1f , z);
-        float pos = terrain.getHeight(vec);
-
-        return new Vector3f(x, pos, z);
-    }
 
 
     @Override
@@ -229,7 +271,7 @@ public class Game implements IGameLogic {
 
 
     @Override
-    public void update(float interval, MouseInput mouseInput, Window window) {
+    public void update(float interval, MouseInput mouseInput, Window window) throws Exception {
         // Update camera based on mouse
         if (mouseInput.isRightButtonPressed()) {
             Vector2f rotVec = mouseInput.getDisplVec();
@@ -263,6 +305,52 @@ public class Game implements IGameLogic {
         }
 
         scene.update();
+
+
+        //update graphs every x seconds
+        if(elapsedSimSeconds >= waitAmt){
+
+            if(!window.getOpts().unlockFrameRate) {
+                lineChart.addToDataset(scene.getDeers().size(), scene.getTigerList().size(), minutes, "Number Of Animals");
+                awarenessChart.addToDataset(scene.averageDeerAwareness(), scene.averageTigerAwareness(), minutes, "Awareness");
+                maxHungerChart.addToDataset(scene.averageDeerMaxHunger(), scene.averageTigerMaxHunger(), minutes, "MaxHunger");
+                maxEnergyChart.addToDataset(scene.averageDeerMaxEnergy(), scene.averageTigerMaxEnergy(), minutes, "MaxEnergy");
+                maxGenerationChart.addToDataset(scene.maxDeerGeneration(), scene.maxTigerGeneration(), minutes, "Max Generation");
+
+                scene.countGenders();
+                genders.resetDataset(scene.getDeerMales(), scene.getDeerFemales(), scene.getTigerMales(), scene.getTigerFemales());
+            }else{
+                lineChart.addToDataset(scene.getDeers().size(), scene.getTigerList().size(), (int) elapsedSeconds, "Amount Of Animals");
+                awarenessChart.addToDataset(scene.averageDeerAwareness(), scene.averageTigerAwareness(), (int) elapsedSeconds, "Awareness");
+                maxHungerChart.addToDataset(scene.averageDeerMaxHunger(), scene.averageTigerMaxHunger(), (int) elapsedSeconds, "MaxHunger");
+                maxEnergyChart.addToDataset(scene.averageDeerMaxEnergy(), scene.averageTigerMaxEnergy(), (int) elapsedSeconds, "MaxEnergy");
+                maxGenerationChart.addToDataset(scene.maxDeerGeneration(), scene.maxTigerGeneration(), (int) elapsedSeconds, "Max Generation");
+                genders.resetDataset(scene.getDeerMales(), scene.getDeerFemales(), scene.getTigerMales(), scene.getTigerFemales());
+            }
+
+            for(LineChart c  : lineCharts){
+                c.repaint();
+                c.setVisible(true);
+            }
+
+            for(BarChart b : barCharts){
+//                b.repaint();
+                b.setVisible(true);
+
+            }
+
+            simStartTime = System.currentTimeMillis();
+            elapsedSimTime = 0;
+            elapsedSimSeconds = 0;
+            minutes++;
+        }
+
+        elapsedSimTime = System.currentTimeMillis() - simStartTime;
+        elapsedSimSeconds = elapsedSimTime / 1000;
+        elapsedTime = System.currentTimeMillis() - startTime;
+        elapsedSeconds = elapsedTime / 1000;
+
+        System.out.println(scene.getDeers().size());
     }
 
     public void render(Window window, MouseInput mouseInput) {
